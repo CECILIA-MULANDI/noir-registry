@@ -1,4 +1,5 @@
-mod db;
+use noir_registry::{db, rest_apis};
+use std::net::SocketAddr;
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -6,7 +7,25 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     dotenvy::dotenv().ok();
     
     // Initialize database connection and run migrations
-    let _pool = db::init_db().await?;
+    let pool = db::init_db().await?;
+    
+    // Create the API router
+    let app = rest_apis::create_router(pool);
+    
+    // Start the server
+    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    println!("🚀 Server starting on http://{}", addr);
+    println!("📡 Available endpoints:");
+    println!("   GET /health - Health check");
+    println!("   GET /api/packages - List all packages");
+    println!("   GET /api/packages/:name - Get package by name");
+    println!("   GET /api/search?q=query - Search packages");
+    
+    let server = axum::Server::bind(&addr)
+        .serve(app.into_make_service());
+    
+    println!("✅ Server running!");
+    server.await?;
     
     Ok(())
 }

@@ -1,4 +1,4 @@
-use serde::Deserialize;
+use serde::{Serialize, Deserialize};
 
 /// This should contain the structure of the package we are scraping
 #[derive(Debug, Clone)]
@@ -6,6 +6,23 @@ pub struct Package {
     pub name: String,
     pub github_url: String,
     pub description: String,
+}
+/// This is the structure of the package we expect from an API response
+#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+pub struct PackageResponse {
+    pub id: i32,
+    pub name: String,
+    pub description: Option<String>,
+    pub github_repository_url: String,
+    pub homepage: Option<String>,
+    pub license: Option<String>,
+    pub owner_github_username: String,
+    pub owner_avatar_url: Option<String>,
+    pub total_downloads: i32,
+    pub github_stars: i32,
+    pub latest_version: Option<String>,
+    pub created_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 /// GitHub API response for repository info
 #[derive(Debug, Deserialize)]

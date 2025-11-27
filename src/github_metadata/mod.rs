@@ -1,5 +1,5 @@
+use crate::models::{EnrichedPackage, GitHubRepo, Package};
 use anyhow::Result;
-use crate::models::{GitHubRepo,Package, EnrichedPackage};
 pub fn parse_github_url(url: &str) -> Option<(String, String)> {
     // This is the URL Pattern: https://github.com/owner/repo
     let parts: Vec<&str> = url.split('/').collect();

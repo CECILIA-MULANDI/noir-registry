@@ -1,7 +1,7 @@
 use anyhow::Result;
 use noir_registry::db;
-use noir_registry::models::Package;
 use noir_registry::github_metadata::enrich_package;
+use noir_registry::models::Package;
 use noir_registry::package_storage::insert_package;
 use regex::Regex;
 

@@ -1,4 +1,4 @@
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
 
 /// This should contain the structure of the package we are scraping
 #[derive(Debug, Clone)]

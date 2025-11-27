@@ -8,7 +8,7 @@ Create a package registry that:
 
 - Lists all Noir packages from the ecosystem
 - Allows searching and discovering packages
-- Provides GraphQL API for package metadata
+- Provides REST API for package metadata
 - Enables future features: publishing, versioning, etc.
 
 ## Current Status
@@ -19,11 +19,11 @@ Create a package registry that:
 - [x] Database setup on Supabase
 - [x] Data scraper that fetches packages from awesome-noir
 - [x] GitHub API integration for package metadata
+- [x] REST API server with Axum
 - [x] **99 packages** populated in database
 
 ### In Progress
 
-- [ ] GraphQL API server
 - [ ] Frontend web interface
 - [ ] Package publishing workflow
 
@@ -37,7 +37,7 @@ Create a package registry that:
               │
               ▼
 ┌─────────────────────────────────────┐
-│  GraphQL API (Rust + async-graphql) │
+│  REST API (Rust + Axum)             │
 │  Query packages, search, filter     │
 └─────────────┬───────────────────────┘
               │
@@ -154,30 +154,59 @@ cargo run --bin scraper
 
 **Note:** Can be run multiple times safely (uses `ON CONFLICT DO UPDATE`)
 
-### Run the API Server (Coming Soon)
+### Run the API Server
 
 ```bash
-cargo run --bin server
+cargo run
 ```
 
-This will start the GraphQL API server.
+This will start the REST API server on `http://localhost:3000`.
+
+**Available endpoints:**
+
+- `GET /health` - Health check endpoint
+- `GET /api/packages` - List all packages (sorted by GitHub stars)
+- `GET /api/packages/:name` - Get a specific package by name
+- `GET /api/search?q=query` - Search packages by name or description
+
+**Example:**
+
+```bash
+# Start the server
+cargo run
+
+# In another terminal, test the API
+curl http://localhost:3000/health
+curl http://localhost:3000/api/packages
+curl http://localhost:3000/api/packages/merkle-tree
+curl http://localhost:3000/api/search?q=cryptography
+```
 
 ## Project Structure
 
 ```
 noir-registry/
 ├── src/
-│   ├── main.rs              # API server entry point (coming soon)
-│   ├── lib.rs               # Shared library code
-│   ├── db/
-│   │   └── mod.rs           # Database connection utilities
+│   ├── lib.rs                    # Library entry point (shared code)
+│   ├── main.rs                   # API server entry point
+│   ├── models/                   # Data structures (Package, EnrichedPackage, etc.)
+│   │   └── mod.rs
+│   ├── github_metadata/          # GitHub API integration
+│   │   └── mod.rs
+│   ├── package_storage/           # Database operations for packages
+│   │   └── mod.rs
+│   ├── db/                       # Database connection utilities
+│   │   ├── mod.rs
+│   │   └── db.rs
+│   ├── rest_apis/                # REST API endpoints and handlers
+│   │   └── mod.rs
 │   └── bin/
-│       └── scraper.rs       # Data scraper binary
+│       └── scraper.rs           # Data scraper binary
 ├── migrations/
-│   └── 20240101000000_initial_schema.sql  # Database schema
-├── Cargo.toml               # Rust dependencies
-├── .env                     # Environment variables (create this!)
-└── README.md                # This file
+│   └── 20251122235733_initial_schema.sql  # Database schema
+├── Cargo.toml                   # Rust dependencies
+├── .env                         # Environment variables (create this!)
+└── README.md                    # This file
 ```
 
 ## 🔧 Tech Stack
@@ -185,8 +214,8 @@ noir-registry/
 ### Backend
 
 - **Language:** Rust
-- **Web Framework:** Axum (coming soon)
-- **GraphQL:** async-graphql (coming soon)
+- **Web Framework:** Axum
+- **API Style:** REST
 - **Database:** SQLx (PostgreSQL driver)
 - **HTTP Client:** reqwest
 
@@ -198,7 +227,7 @@ noir-registry/
 ### Frontend (Planned)
 
 - **Framework:** Next.js
-- **GraphQL Client:** Apollo Client
+- **API Client:** Fetch API or Axios
 - **Styling:** Tailwind CSS
 
 ## Key Concepts
@@ -238,23 +267,14 @@ Insert into database
 
 ### What Needs to Be Built Next
 
-1. **GraphQL API Server** (Priority 1)
-
-   - Set up Axum web server
-   - Create GraphQL schema
-   - Implement resolvers for:
-     - `packages` query (list all)
-     - `package(name)` query (get one)
-     - `searchPackages(query)` query
-
-2. **Frontend Website** (Priority 2)
+1. **Frontend Website** (Priority 1)
 
    - Homepage with search bar
    - Package listing page
    - Individual package detail pages
    - Filtering by keywords/tags
 
-3. **Publishing Workflow** (Priority 3)
+2. **Publishing Workflow** (Priority 2)
    - User authentication (GitHub OAuth)
    - Publisher verification
    - Package upload endpoint
@@ -265,7 +285,7 @@ Insert into database
 1. **Create a feature branch**
 
 ```bash
-git checkout -b feature/graphql-api
+git checkout -b feature/rest-api
 ```
 
 2. **Make your changes**
@@ -281,8 +301,8 @@ cargo run --bin scraper  # or --bin server
 
 ```bash
 git add .
-git commit -m "Add GraphQL API with basic queries"
-git push origin feature/graphql-api
+git commit -m "Add rest API with basic queries"
+git push origin feature/rest-api
 ```
 
 5. **Create a Pull Request**
@@ -326,8 +346,8 @@ git push origin feature/graphql-api
 - [Noir Language Docs](https://noir-lang.org/)
 - [awesome-noir Repository](https://github.com/noir-lang/awesome-noir)
 - [Supabase Documentation](https://supabase.com/docs)
-- [async-graphql Book](https://async-graphql.github.io/async-graphql/en/index.html)
 - [Axum Documentation](https://docs.rs/axum/latest/axum/)
+- [Axum Examples](https://github.com/tokio-rs/axum/tree/main/examples)
 
 ## 📞 Questions?
 

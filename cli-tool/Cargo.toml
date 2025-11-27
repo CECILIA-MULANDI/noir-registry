@@ -1,0 +1,26 @@
+[package]
+name = "nargo-add"
+version.workspace = true
+edition.workspace = true
+
+[[bin]]
+name = "nargo-add"
+path = "src/main.rs"
+
+[[bin]]
+name = "nargo"
+path = "src/nargo_wrapper.rs"
+
+[dependencies]
+# Use workspace dependencies
+tokio.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+reqwest.workspace = true
+
+# CLI-specific dependencies
+clap = { version = "4.5", features = ["derive"] }
+toml_edit = "0.22"
+dirs = "5.0"
+

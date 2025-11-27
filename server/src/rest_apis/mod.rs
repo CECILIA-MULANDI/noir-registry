@@ -145,3 +145,4 @@ async fn health_check(State(state): State<Arc<AppState>>) -> Result<Json<serde_j
         }
     }
 }
+

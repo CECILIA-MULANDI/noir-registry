@@ -125,3 +125,4 @@ pub async fn init_db() -> Result<PgPool, Box<dyn std::error::Error>> {
     run_migrations(&pool).await?;
     Ok(pool)
 }
+

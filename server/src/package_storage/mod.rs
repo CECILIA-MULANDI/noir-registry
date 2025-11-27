@@ -234,3 +234,4 @@ pub async fn search_packages(pool: &sqlx::PgPool, query: &str) -> Result<Vec<Pac
     })
     .await
 }
+

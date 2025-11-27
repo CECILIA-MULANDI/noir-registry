@@ -1,0 +1,37 @@
+[package]
+name = "noir-registry-server"
+version.workspace = true
+edition.workspace = true
+default-run = "noir-registry-server"
+
+[[bin]]
+name = "noir-registry-server"
+path = "src/main.rs"
+
+[[bin]]
+name = "scraper"
+path = "src/bin/scraper.rs"
+
+[dependencies]
+# Use workspace dependencies
+tokio.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+reqwest.workspace = true
+regex.workspace = true
+chrono.workspace = true
+
+# Server-specific dependencies
+sqlx = { version = "0.7", features = [
+    "runtime-tokio-rustls",
+    "postgres",
+    "macros",
+    "migrate",
+    "chrono",
+] }
+dotenvy = "0.15"
+axum = "0.7"
+tower-http = { version = "0.5", features = ["cors"] }
+tower = "0.4"
+

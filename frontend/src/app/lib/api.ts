@@ -5,7 +5,11 @@ function normalizeApiUrl(url: string): string {
   return url.trim().replace(/[;\/]+$/, ''); // Remove trailing semicolons and slashes
 }
 
-const rawApiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api';
+// Use relative URL for client-side requests (goes through Next.js rewrite proxy)
+// Use full URL for server-side requests
+const rawApiUrl = typeof window === 'undefined' 
+  ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api')
+  : '/api';
 const API_BASE_URL = normalizeApiUrl(rawApiUrl);
 
 // Debug: Log the API URL in development (helps catch configuration issues)

@@ -1,4 +1,4 @@
-use noir_registry::{db, rest_apis};
+use noir_registry_server::{db, rest_apis};
 use std::net::SocketAddr;
 
 #[tokio::main]
@@ -32,3 +32,4 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
+

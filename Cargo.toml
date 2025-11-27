@@ -1,25 +1,20 @@
-[package]
-name = "noir_registry"
+[workspace]
+members = [
+    "server",
+    "cli-tool",
+]
+resolver = "2"
+
+[workspace.package]
 version = "0.1.0"
 edition = "2024"
-default-run = "noir_registry"
 
-[dependencies]
-sqlx = { version = "0.7", features = [
-    "runtime-tokio-rustls",
-    "postgres",
-    "macros",
-    "migrate",
-    "chrono",
-] }
+[workspace.dependencies]
 tokio = { version = "1", features = ["full"] }
-dotenvy = "0.15"
-reqwest = { version = "0.11", features = ["json"] }
+anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-anyhow = "1.0"
+reqwest = { version = "0.11", features = ["json"] }
 regex = "1.10"
-axum = "0.7"
 chrono = { version = "0.4", features = ["serde"] }
-tower-http = { version = "0.5", features = ["cors"] }
-tower = "0.4"
+

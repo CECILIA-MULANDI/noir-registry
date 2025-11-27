@@ -55,3 +55,4 @@ pub struct EnrichedPackage {
     pub license: Option<String>,
     pub homepage: Option<String>,
 }
+

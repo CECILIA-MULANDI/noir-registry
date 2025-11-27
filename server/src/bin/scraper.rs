@@ -1,8 +1,8 @@
 use anyhow::Result;
-use noir_registry::db;
-use noir_registry::github_metadata::enrich_package;
-use noir_registry::models::Package;
-use noir_registry::package_storage::insert_package;
+use noir_registry_server::db;
+use noir_registry_server::github_metadata::enrich_package;
+use noir_registry_server::models::Package;
+use noir_registry_server::package_storage::insert_package;
 use regex::Regex;
 
 #[tokio::main]
@@ -142,3 +142,4 @@ fn parse_packages(readme: &str) -> Result<Vec<Package>> {
 
     Ok(packages)
 }
+

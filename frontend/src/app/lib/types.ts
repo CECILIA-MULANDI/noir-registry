@@ -6,4 +6,10 @@ export  interface Package {
     github_stars: number | null;
     created_at: string;
     updated_at: string;
+    github_repository_url?: string;
+  homepage?: string | null;
+  license?: string | null;
+  owner_github_username?: string;
+  owner_avatar_url?: string | null;
+  total_downloads?: number;
   }

@@ -52,3 +52,23 @@ export async function getPackages(): Promise<Package[]> {
     }
     
   }
+  export async function getPackageByName(name: string): Promise<Package | null> {
+    try {
+      const res = await fetch(`${API_BASE_URL}/packages/${encodeURIComponent(name)}`, {
+        cache: 'no-store'
+      });
+      
+      if (!res.ok) {
+        if (res.status === 404) {
+          return null; // Package not found
+        }
+        console.error(`Failed to fetch package: ${res.status} ${res.statusText}`);
+        return null;
+      }
+      
+      return res.json();
+    } catch (error) {
+      console.warn(`Error fetching package ${name}:`, error);
+      return null;
+    }
+  }

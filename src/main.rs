@@ -13,7 +13,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = rest_apis::create_router(pool);
     
     // Start the server
-    let addr = SocketAddr::from(([0, 0, 0, 0], 3000));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
     println!("🚀 Server starting on http://{}", addr);
     println!("📡 Available endpoints:");
     println!("   GET /health - Health check");
@@ -21,11 +21,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   GET /api/packages/:name - Get package by name");
     println!("   GET /api/search?q=query - Search packages");
     
-    let server = axum::Server::bind(&addr)
-        .serve(app.into_make_service());
-    
+    let listener = tokio::net::TcpListener::bind(&addr).await?;
     println!("✅ Server running!");
-    server.await?;
+    axum::serve(listener, app).await?;
+    
+   
     
     Ok(())
 }

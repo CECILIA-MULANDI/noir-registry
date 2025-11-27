@@ -4,17 +4,48 @@ use anyhow::Result;
 /// Creates a database connection pool from the DATABASE_URL environment variable
 pub async fn create_pool() -> Result<PgPool> {
     // Get database URL from environment variable
-    let database_url = std::env::var("DATABASE_URL")
+    let mut database_url = std::env::var("DATABASE_URL")
         .expect("DATABASE_URL must be set in environment or .env file");
 
-    // Parse connection options - the DATABASE_URL should have ?statement_cache_size=0
-    // This is REQUIRED for PgBouncer transaction mode compatibility
+    // Automatically fix DATABASE_URL for PgBouncer compatibility
+    let original_url = database_url.clone();
+    
+    // Check if using pooler (port 6543) - this doesn't support prepared statements well
+    // Automatically switch to direct connection (port 5432) if pooler is detected
+    if database_url.contains(":6543") {
+        println!("⚠️  Detected PgBouncer pooler (port 6543) - switching to direct connection (port 5432)");
+        println!("   This avoids prepared statement cache conflicts");
+        database_url = database_url.replace(":6543", ":5432");
+    }
+    
+    // Add statement_cache_size=0 if missing (extra safety)
+    if !database_url.contains("statement_cache_size") {
+        // Append the parameter (handle both cases: with or without existing query params)
+        if database_url.contains('?') {
+            database_url.push_str("&statement_cache_size=0");
+        } else {
+            database_url.push_str("?statement_cache_size=0");
+        }
+        println!("✅ Added statement_cache_size=0 to DATABASE_URL");
+    }
+    
+    if original_url != database_url {
+        println!("   Original: {}", original_url.split('@').last().unwrap_or(&original_url));
+        println!("   Updated:  {}", database_url.split('@').last().unwrap_or(&database_url));
+    } else {
+        println!("✅ DATABASE_URL is properly configured");
+    }
+
+    // Parse connection options
     let connect_options = PgConnectOptions::from_str(&database_url)?;
     
-    // Create a connection pool
-    // Note: statement_cache_size=0 in the URL should disable prepared statements
+    // Create a connection pool with settings optimized for PgBouncer
+    // - Lower max_connections to reduce statement cache conflicts
+    // - Shorter idle timeout to clear stale connections faster
     let pool = PgPoolOptions::new()
-        .max_connections(5)
+        .max_connections(3) // Small pool to minimize statement conflicts
+        .idle_timeout(std::time::Duration::from_secs(30)) // Clear idle connections faster
+        .max_lifetime(std::time::Duration::from_secs(300)) // Recycle connections every 5 minutes
         .connect_with(connect_options)
         .await?;
 

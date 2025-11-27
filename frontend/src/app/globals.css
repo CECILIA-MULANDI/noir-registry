@@ -1,0 +1,72 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;   
+:root {
+  /* Backgrounds*/
+  --bg-dark: #1c1c1e;
+  --bg-darker: #0d1117;
+  --bg-card: #161b22;
+  --bg-card-hover: #1f2328;
+
+  /* Text*/
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+
+  /* Accent - crates.io yellow/orange */
+  --accent-primary: #f59e0b;
+  --accent-hover: #fbbf24;
+
+  /* Borders */
+  --border-color: #30363d;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'kern' 1;
+  text-rendering: optimizeLegibility;
+}
+
+/* Smooth scrolling */
+html {
+  scroll-behavior: smooth;
+}
+
+/* Better focus styles */
+*:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Hover utilities */
+.hover-text-primary:hover {
+  color: var(--text-primary) !important;
+}
+
+.hover-bg-accent:hover {
+  background-color: var(--accent-hover) !important;
+}
+
+.hover-card:hover {
+  background-color: var(--bg-card-hover) !important;
+  border-color: rgba(245, 158, 11, 0.5) !important;
+}
+
+.hover-arrow:hover {
+  color: var(--accent-primary) !important;
+}
+
+.group:hover .group-hover-text-accent {
+  color: var(--accent-primary) !important;
+}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              

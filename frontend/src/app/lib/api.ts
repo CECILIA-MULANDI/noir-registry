@@ -1,8 +1,9 @@
 import { Package } from './types';
-const API_URL = 'http://localhost:8080/api';
+const API_BASE_URL = 'http://localhost:8080/api';
+/// Function to get all packages from the API
 export async function getPackages(): Promise<Package[]> {
     try {
-      const res = await fetch('http://localhost:8080/api/packages', {
+      const res = await fetch(`${API_BASE_URL}/packages`,{
         // We can always fetch fresh data
         cache: 'no-store'
       });
@@ -32,4 +33,22 @@ export async function getPackages(): Promise<Package[]> {
       console.warn('Backend not available or error fetching packages:', error);
       return [];
     }
+  }
+  ///Function to search for a package
+  export async function searchPackages(query: string): Promise<Package[]> {
+    try{
+      const res = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}`,{
+        cache: 'no-store'
+      })
+      if (!res.ok) {
+        console.error(`Failed to search packages: ${res.status} ${res.statusText}`);
+        return [];
+      }
+      return res.json();
+    }
+    catch(error){
+      console.warn('Error searching packages:', error);
+    return [];
+    }
+    
   }

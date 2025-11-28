@@ -16,6 +16,17 @@ cargo install --path cli-tool --bin nargo-add
 export PATH="$HOME/.cargo/bin:$PATH"
 ```
 
+### Configure Registry URL
+
+Set the default registry URL via environment variable:
+
+```bash
+# In your ~/.bashrc or ~/.zshrc
+export NOIR_REGISTRY_URL="https://your-registry.com/api"
+```
+
+Or use the `--registry` flag for each command.
+
 ### Alternative: Build and Install Manually
 
 ```bash
@@ -71,7 +82,35 @@ cat Nargo.toml
 ## Requirements
 
 - Rust and Cargo installed
-- Your registry server should be running (default: http://localhost:8080/api)
+- Your registry server should be running
+- Network access to the registry API
+
+## Configuration
+
+### Environment Variables
+
+- `NOIR_REGISTRY_URL` - Default registry API URL (defaults to `http://localhost:8080/api`)
+
+Example:
+```bash
+export NOIR_REGISTRY_URL="https://registry.noir-lang.org/api"
+nargo-add rocq-of-noir
+```
+
+### Command Line Options
+
+- `--registry <URL>` - Override registry URL for this command
+- `--manifest-path <PATH>` - Specify Nargo.toml path explicitly
+
+## Features
+
+✅ **Production-Ready Features:**
+- Environment variable support (`NOIR_REGISTRY_URL`)
+- Network retry logic with exponential backoff
+- Comprehensive error messages with troubleshooting tips
+- TOML validation after modifications
+- Timeout handling for network requests
+- Clear user feedback and progress indicators
 
 ## Troubleshooting
 
@@ -86,6 +125,17 @@ cat Nargo.toml
 
 **"Package not found in registry"**
 - Make sure your registry server is running
-- Check the registry URL with `--registry` flag: `nargo-add package-name --registry http://your-registry.com/api`
-- Verify the package name exists in your registry
+- Check the registry URL: `echo $NOIR_REGISTRY_URL` or use `--registry` flag
+- Verify the package name exists: `curl $NOIR_REGISTRY_URL/packages/package-name`
+- Check network connectivity
+
+**"Failed to connect to registry"**
+- The tool will automatically retry 3 times with exponential backoff
+- Check that the registry URL is correct
+- Verify network connectivity: `curl $NOIR_REGISTRY_URL/health`
+- Check firewall/proxy settings
+
+**"Dependency already exists"**
+- The tool prevents duplicate dependencies
+- To update, manually edit Nargo.toml or remove and re-add
 

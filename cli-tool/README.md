@@ -4,24 +4,26 @@ A CLI tool to add packages from the Noir registry to your `Nargo.toml`.
 
 ## Installation
 
-### Quick Install (Recommended)
+### Install from crates.io (Recommended) ⭐
 
 ```bash
-# From the noir-registry directory
-cd noir-registry
-cargo install --path cli-tool --bin nargo-add
-
-# This installs nargo-add to ~/.cargo/bin/
-# Make sure ~/.cargo/bin is in your PATH
-export PATH="$HOME/.cargo/bin:$PATH"
+cargo install nargo-add
 ```
 
-### Configure Registry URL
+This installs `nargo-add` to `~/.cargo/bin/`. Make sure `~/.cargo/bin` is in your PATH.
 
-Set the default registry URL via environment variable:
+### Install from GitHub
 
 ```bash
-# In your ~/.bashrc or ~/.zshrc
+cargo install --git https://github.com/CECILIA-MULANDI/noir-registry --bin nargo-add --path cli-tool
+```
+
+### Configure Registry URL (Optional)
+
+The tool defaults to `http://109.205.177.65/api`. To use a different registry:
+
+```bash
+# Set environment variable (in your ~/.bashrc or ~/.zshrc)
 export NOIR_REGISTRY_URL="https://your-registry.com/api"
 ```
 
@@ -89,11 +91,11 @@ cat Nargo.toml
 
 ### Environment Variables
 
-- `NOIR_REGISTRY_URL` - Default registry API URL (defaults to `http://localhost:8080/api`)
+- `NOIR_REGISTRY_URL` - Default registry API URL (defaults to `http://109.205.177.65/api`)
 
 Example:
 ```bash
-export NOIR_REGISTRY_URL="https://registry.noir-lang.org/api"
+export NOIR_REGISTRY_URL="http://109.205.177.65/api"
 nargo-add rocq-of-noir
 ```
 
@@ -115,7 +117,8 @@ nargo-add rocq-of-noir
 ## Troubleshooting
 
 **"nargo-add: command not found"**
-- Make sure `nargo-add` is installed: `cargo install --path cli-tool --bin nargo-add`
+- Install from crates.io: `cargo install nargo-add`
+- Or install from GitHub: `cargo install --git https://github.com/CECILIA-MULANDI/noir-registry --bin nargo-add --path cli-tool`
 - Check that `~/.cargo/bin` is in your PATH: `echo $PATH`
 - Verify installation: `which nargo-add`
 

@@ -2,6 +2,30 @@
 
 A centralized package registry for the Noir programming language ecosystem - like npm for JavaScript or crates.io for Rust.
 
+## Quick Start
+
+**Using the API:**
+```bash
+# List all packages
+curl http://109.205.177.65/api/packages
+
+# Search packages
+curl "http://109.205.177.65/api/search?q=cryptography"
+
+# Get specific package
+curl http://109.205.177.65/api/packages/CodeTracer
+```
+
+**Using the CLI tool:**
+```bash
+# Install
+cargo install nargo-add
+
+# Use in your Noir project
+cd your-noir-project
+nargo-add package-name
+```
+
 ## Project Goal
 
 Create a package registry that:
@@ -21,24 +45,31 @@ Create a package registry that:
 - [x] GitHub API integration for package metadata
 - [x] REST API server with Axum
 - [x] **99 packages** populated in database
+- [x] **Production deployment** - Server live at `http://109.205.177.65`
+- [x] **CLI tool (`nargo-add`)** - Available on [crates.io](https://crates.io/crates/nargo-add)
+- [x] **Frontend web interface** - Deployed at [https://noir-registry.vercel.app/](https://noir-registry.vercel.app/)
 
 ### In Progress
 
-- [ ] Frontend web interface
+- [ ] Frontend deployment (configured but not deployed yet)
 - [ ] Package publishing workflow
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────┐
-│  Frontend (Next.js - Coming Soon)  │
-│  Package search & discovery UI      │
+│  Frontend (Next.js)                 │
+│  Package search & discovery UI       │
+│  - Browse packages                   │
+│  - Search functionality              │
+│  - Package detail pages              │
 └─────────────┬───────────────────────┘
               │
               ▼
 ┌─────────────────────────────────────┐
 │  REST API (Rust + Axum)             │
 │  Query packages, search, filter     │
+│  Deployed: http://109.205.177.65    │
 └─────────────┬───────────────────────┘
               │
               ▼
@@ -75,7 +106,72 @@ Create a package registry that:
 
 - Many-to-many relationship with packages
 
-## Getting Started
+##  Live Services
+
+### Web Interface
+**Frontend:** [https://noir-registry.vercel.app/](https://noir-registry.vercel.app/)
+
+Browse packages, search, and explore the Noir package ecosystem through the web interface.
+
+### API Server
+**Base URL:** `http://109.205.177.65`
+
+**Available Endpoints:**
+- `GET /health` - Health check
+- `GET /api/packages` - List all packages
+- `GET /api/packages/:name` - Get package by name
+- `GET /api/search?q=query` - Search packages
+
+**Try it:**
+```bash
+curl http://109.205.177.65/health
+curl http://109.205.177.65/api/packages | head -20
+curl "http://109.205.177.65/api/search?q=cryptography"
+```
+
+##  CLI Tool: nargo-add
+
+Install the CLI tool to easily add packages to your Noir projects:
+
+```bash
+cargo install nargo-add
+```
+
+**Usage:**
+```bash
+cd your-noir-project
+nargo-add package-name
+```
+
+The tool automatically fetches package info from the registry and adds it to your `Nargo.toml`. See [cli-tool/README.md](cli-tool/README.md) for more details.
+
+##  Frontend Web Interface
+
+The frontend is built with Next.js and deployed at **[https://noir-registry.vercel.app/](https://noir-registry.vercel.app/)**.
+
+**Features:**
+- Browse all packages
+- Search functionality
+- Package detail pages
+- Responsive design with Tailwind CSS
+
+**Local Development:**
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+The frontend will run on `http://localhost:3000` and connect to the API server.
+
+**Configure API URL:**
+Set `NEXT_PUBLIC_API_URL` environment variable to point to your API:
+```bash
+export NEXT_PUBLIC_API_URL="http://109.205.177.65/api"
+npm run dev
+```
+
+## Getting Started (Development)
 
 ### Prerequisites
 
@@ -154,13 +250,14 @@ cargo run --bin scraper
 
 **Note:** Can be run multiple times safely (uses `ON CONFLICT DO UPDATE`)
 
-### Run the API Server
+### Run the API Server (Local Development)
 
 ```bash
+cd server
 cargo run
 ```
 
-This will start the REST API server on `http://localhost:3000`.
+This will start the REST API server on `http://localhost:8080` (or the port specified in `PORT` env var).
 
 **Available endpoints:**
 
@@ -172,41 +269,48 @@ This will start the REST API server on `http://localhost:3000`.
 **Example:**
 
 ```bash
-# Start the server
+# Start the server locally
+cd server
 cargo run
 
 # In another terminal, test the API
-curl http://localhost:3000/health
-curl http://localhost:3000/api/packages
-curl http://localhost:3000/api/packages/merkle-tree
-curl http://localhost:3000/api/search?q=cryptography
+curl http://localhost:8080/health
+curl http://localhost:8080/api/packages
+curl http://localhost:8080/api/packages/merkle-tree
+curl http://localhost:8080/api/search?q=cryptography
 ```
+
+**Note:** For production, the server is deployed at `http://109.205.177.65`. See the [Live API](#-live-api) section above.
 
 ## Project Structure
 
 ```
 noir-registry/
-├── src/
-│   ├── lib.rs                    # Library entry point (shared code)
-│   ├── main.rs                   # API server entry point
-│   ├── models/                   # Data structures (Package, EnrichedPackage, etc.)
-│   │   └── mod.rs
-│   ├── github_metadata/          # GitHub API integration
-│   │   └── mod.rs
-│   ├── package_storage/           # Database operations for packages
-│   │   └── mod.rs
-│   ├── db/                       # Database connection utilities
-│   │   ├── mod.rs
-│   │   └── db.rs
-│   ├── rest_apis/                # REST API endpoints and handlers
-│   │   └── mod.rs
-│   └── bin/
-│       └── scraper.rs           # Data scraper binary
-├── migrations/
-│   └── 20251122235733_initial_schema.sql  # Database schema
-├── Cargo.toml                   # Rust dependencies
-├── .env                         # Environment variables (create this!)
-└── README.md                    # This file
+├── server/                       # REST API server
+│   ├── src/
+│   │   ├── lib.rs                # Library entry point (shared code)
+│   │   ├── main.rs               # API server entry point
+│   │   ├── models/               # Data structures
+│   │   ├── github_metadata/      # GitHub API integration
+│   │   ├── package_storage/      # Database operations
+│   │   ├── db/                   # Database connection utilities
+│   │   ├── rest_apis/            # REST API endpoints
+│   │   └── bin/
+│   │       └── scraper.rs        # Data scraper binary
+│   ├── migrations/               # Database migrations
+│   └── Cargo.toml
+├── cli-tool/                     # nargo-add CLI tool
+│   ├── src/
+│   │   └── main.rs               # CLI entry point
+│   └── README.md                 # CLI documentation
+├── frontend/                     # Next.js frontend
+│   ├── src/app/                  # Next.js app directory
+│   │   ├── components/           # React components
+│   │   ├── lib/                  # API client & types
+│   │   └── packages/             # Package pages
+│   └── package.json
+├── Cargo.toml                    # Workspace configuration
+└── README.md                     # This file
 ```
 
 ## 🔧 Tech Stack
@@ -224,11 +328,12 @@ noir-registry/
 - **PostgreSQL** via Supabase
 - **Migrations:** SQLx CLI
 
-### Frontend (Planned)
+### Frontend
 
-- **Framework:** Next.js
-- **API Client:** Fetch API or Axios
+- **Framework:** Next.js 16
+- **API Client:** Fetch API
 - **Styling:** Tailwind CSS
+- **Features:** Package browsing, search, detail pages
 
 ## Key Concepts
 
@@ -267,14 +372,7 @@ Insert into database
 
 ### What Needs to Be Built Next
 
-1. **Frontend Website** (Priority 1)
-
-   - Homepage with search bar
-   - Package listing page
-   - Individual package detail pages
-   - Filtering by keywords/tags
-
-2. **Publishing Workflow** (Priority 2)
+1. **Publishing Workflow** (Priority 1)
    - User authentication (GitHub OAuth)
    - Publisher verification
    - Package upload endpoint
@@ -355,4 +453,11 @@ Reach out to the team or open an issue!
 
 ---
 
-**Current Stats:** 99 packages indexed and ready to serve! 🎉
+## Current Stats
+
+- **99 packages** indexed and ready to serve
+- **Web interface** live at [https://noir-registry.vercel.app/](https://noir-registry.vercel.app/)
+- **API live** at `http://109.205.177.65`
+- **CLI tool** available: `cargo install nargo-add`
+
+🎉 **Fully deployed and ready for use!**

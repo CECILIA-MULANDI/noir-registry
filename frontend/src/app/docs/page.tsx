@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function DocsPage() {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-dark)' }}>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-darker)' }}>
       <Header />
 
       <main className="py-16">
@@ -84,7 +84,7 @@ export default function DocsPage() {
                 </p>
                 <div className="bg-black rounded p-2 font-mono text-xs overflow-x-auto">
                   <code style={{ color: '#00ff00' }}>
-                    curl http://localhost:8080/api/packages
+                    curl http://109.205.177.65/api/packages
                   </code>
                 </div>
               </div>
@@ -98,7 +98,7 @@ export default function DocsPage() {
                 </p>
                 <div className="bg-black rounded p-2 font-mono text-xs overflow-x-auto">
                   <code style={{ color: '#00ff00' }}>
-                    curl http://localhost:8080/api/packages/package-name
+                    curl http://109.205.177.65/api/packages/package-name
                   </code>
                 </div>
               </div>
@@ -112,7 +112,7 @@ export default function DocsPage() {
                 </p>
                 <div className="bg-black rounded p-2 font-mono text-xs overflow-x-auto">
                   <code style={{ color: '#00ff00' }}>
-                    curl http://localhost:8080/api/search?q=cryptography
+                    curl http://109.205.177.65/api/search?q=cryptography
                   </code>
                 </div>
               </div>

@@ -1,7 +1,15 @@
 [package]
 name = "nargo-add"
-version.workspace = true
-edition.workspace = true
+version = "0.1.0"
+edition = "2024"
+authors = ["Cecilia Mulandi <mulandicecilia4@gmail.com>"]
+description = "Add packages from the Noir registry to your Nargo.toml"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/CECILIA-MULANDI/noir-registry"
+homepage = "https://github.com/CECILIA-MULANDI/noir-registry"
+documentation = "https://docs.rs/nargo-add"
+keywords = ["noir", "nargo", "package-manager", "cli"]
+categories = ["development-tools", "command-line-utilities"]
 
 [[bin]]
 name = "nargo-add"
@@ -12,14 +20,11 @@ name = "nargo"
 path = "src/nargo_wrapper.rs"
 
 [dependencies]
-# Use workspace dependencies
-tokio.workspace = true
-anyhow.workspace = true
-serde.workspace = true
-serde_json.workspace = true
-reqwest.workspace = true
-
-# CLI-specific dependencies
+tokio = { version = "1", features = ["full"] }
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+reqwest = { version = "0.11", features = ["json"] }
 clap = { version = "4.5", features = ["derive"] }
 toml_edit = "0.22"
 dirs = "5.0"

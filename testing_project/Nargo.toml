@@ -1,0 +1,7 @@
+[package]
+name = "testing_project"
+type = "bin"
+authors = [""]
+
+[dependencies]
+CodeTracer = { git = "https://github.com/metacraft-labs/codetracer" }

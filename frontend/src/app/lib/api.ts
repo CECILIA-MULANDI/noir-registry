@@ -8,7 +8,7 @@ function normalizeApiUrl(url: string): string {
 // Use relative URL for client-side requests (goes through Next.js rewrite proxy)
 // Use full URL for server-side requests
 const rawApiUrl = typeof window === 'undefined' 
-  ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api')
+  ? (process.env.NEXT_PUBLIC_API_URL || 'http://109.205.177.65/api')
   : '/api';
 const API_BASE_URL = normalizeApiUrl(rawApiUrl);
 

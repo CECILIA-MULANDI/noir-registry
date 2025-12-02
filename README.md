@@ -51,7 +51,6 @@ Create a package registry that:
 
 ### In Progress
 
-- [ ] Frontend deployment (configured but not deployed yet)
 - [ ] Package publishing workflow
 
 ## Architecture

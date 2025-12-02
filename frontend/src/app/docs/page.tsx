@@ -9,6 +9,18 @@ export default function DocsPage() {
 
       <main className="py-16">
         <div className="max-w-[1000px] mx-auto px-8">
+          {/* Back Link */}
+          <Link 
+            href="/" 
+            className="inline-flex items-center gap-2 text-sm mb-8 no-underline transition-colors hover-text-primary"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to home
+          </Link>
+
           <h1 className="text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
             Documentation
           </h1>
@@ -38,11 +50,19 @@ export default function DocsPage() {
             </h2>
             <div className="space-y-4">
               <p style={{ color: 'var(--text-secondary)' }}>
-                To install a package in your Noir project, use the <code className="px-2 py-1 rounded font-mono text-sm" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}>nargo add</code> command:
+                First, install the <code className="px-2 py-1 rounded font-mono text-sm" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}>nargo-add</code> CLI tool:
               </p>
               <div className="bg-black rounded-lg p-4 font-mono text-sm overflow-x-auto">
                 <code style={{ color: '#00ff00' }}>
-                  nargo add package-name
+                  cargo install nargo-add
+                </code>
+              </div>
+              <p style={{ color: 'var(--text-secondary)' }}>
+                Then, to install a package in your Noir project, use:
+              </p>
+              <div className="bg-black rounded-lg p-4 font-mono text-sm overflow-x-auto">
+                <code style={{ color: '#00ff00' }}>
+                  nargo-add package-name
                 </code>
               </div>
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>

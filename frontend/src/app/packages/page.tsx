@@ -65,7 +65,7 @@ export default function PackagesPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-dark)' }}>
+      <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-darker)' }}>
         <Header />
         <main className="py-16">
           <div className="max-w-[1200px] mx-auto px-8 text-center">
@@ -78,11 +78,23 @@ export default function PackagesPage() {
   }
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-dark)' }}>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-darker)' }}>
       <Header />
 
       <main className="py-16">
         <div className="max-w-[1200px] mx-auto px-8">
+          {/* Back Link */}
+          <Link 
+            href="/" 
+            className="inline-flex items-center gap-2 text-sm mb-8 no-underline transition-colors hover-text-primary"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back to home
+          </Link>
+
           {/* Page Header */}
           <div className="mb-8">
             <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>

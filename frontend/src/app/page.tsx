@@ -23,13 +23,13 @@ export default async function HomePage() {
     .slice(0, 4);
 
   return (
-    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-dark)' }}>
+    <div className="min-h-screen" style={{ backgroundColor: 'var(--bg-darker)' }}>
       <Header />
       <Hero />
       <StatsSection packageCount={packages.length} />
       
       {/* Package Lists Section */}
-      <section className="py-16" style={{ backgroundColor: 'var(--bg-dark)' }}>
+      <section className="py-16" style={{ backgroundColor: 'var(--bg-darker)' }}>
         <div className="max-w-[1200px] mx-auto px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
             {/* New Packages */}

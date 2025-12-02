@@ -36,7 +36,7 @@ export default function Hero() {
 
         {/* Search Bar and Action Buttons */}
         <div className="max-w-[800px] mx-auto mb-12">
-          <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-4 items-center">
+          <form onSubmit={handleSearch} className="flex flex-col gap-4 items-center">
             <div className="flex-1 w-full relative">
               <input
                 ref={searchInputRef}
@@ -44,7 +44,7 @@ export default function Hero() {
                 placeholder="Type 'S' or '/' to search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-5 py-4 pr-12 text-base rounded-lg outline-none transition-all focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)]/20"
+                className="w-full px-5 py-4 pr-12 text-base rounded-full outline-none transition-all focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)]/20"
                 style={{ 
                   backgroundColor: 'var(--bg-card)', 
                   border: '1px solid var(--border-color)',
@@ -57,8 +57,8 @@ export default function Hero() {
                 </svg>
               </div>
             </div>
-            <div className="flex gap-3">
-              <Link href="https://noir-lang.org/docs/getting_started/installation" target="_blank" rel="noopener noreferrer" className="px-6 py-4 rounded-lg font-semibold no-underline transition-all inline-flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 hover-bg-accent" style={{ backgroundColor: 'var(--accent-primary)', color: 'var(--bg-darker)' }}>
+            <div className="flex sm:flex-row gap-3 justify-center w-full">
+              <Link href="https://noir-lang.org/docs/" target="_blank" rel="noopener noreferrer" className="px-6 py-4 rounded-lg font-semibold no-underline transition-all inline-flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 hover-bg-accent" style={{ backgroundColor: 'var(--accent-primary)', color: 'var(--bg-darker)' }}>
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
                 </svg>

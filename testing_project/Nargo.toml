@@ -5,3 +5,4 @@ authors = [""]
 
 [dependencies]
 CodeTracer = { git = "https://github.com/metacraft-labs/codetracer" }
+rocq-of-noir = { git = "https://github.com/formal-land/rocq-of-noir" }

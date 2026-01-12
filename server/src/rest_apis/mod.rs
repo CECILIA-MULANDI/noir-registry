@@ -41,6 +41,18 @@ pub struct PublishResponse {
     pub message: String,
     pub package_id: Option<i32>,
 }
+#[derive(Debug, Deserialize)]
+pub struct GitHubAuthRequest {
+    pub github_token: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct GitHubAuthResponse {
+    pub success: bool,
+    pub api_key: Option<String>,
+    pub message: String,
+    pub github_username: Option<String>,
+}
 /// Creates the API router with all routes
 
 pub fn create_router(db: PgPool) -> Router {
@@ -81,6 +93,7 @@ pub fn create_router(db: PgPool) -> Router {
         .route("/api/search", get(search))
         .route("/health", get(health_check))
         .route("/api/packages/publish", post(publish_package))
+        .route("/api/auth/github", post(github_auth))
         .layer(cors)
         .with_state(state)
 }
@@ -155,6 +168,37 @@ async fn health_check(
         Err(e) => {
             eprintln!("Health check failed: {}", e);
             Err(StatusCode::SERVICE_UNAVAILABLE)
+        }
+    }
+}
+/// POST /api/auth/github
+/// Authenticate with GitHub token and get API key
+pub async fn github_auth(
+    State(state): State<Arc<AppState>>,
+    Json(payload): Json<GitHubAuthRequest>,
+) -> Result<Json<GitHubAuthResponse>, StatusCode> {
+    // Let's validate the github token and get/create a user
+    match auth::get_or_create_user_from_github(&state.db, &payload.github_token).await {
+        Ok(user) => {
+            if let Some(api_key) = &user.api_key {
+                Ok(Json(GitHubAuthResponse {
+                    success: true,
+                    api_key: Some(api_key.clone()),
+                    message: "Authentication successful".to_string(),
+                    github_username: Some(user.github_username.clone()),
+                }))
+            } else {
+                Err(StatusCode::INTERNAL_SERVER_ERROR)
+            }
+        }
+        Err(e) => {
+            eprintln!("Error authenticating with Github: {}", e);
+            Ok(Json(GitHubAuthResponse {
+                success: false,
+                api_key: None,
+                message: format!("Failed to authenticate with GitHub: {}", e),
+                github_username: None,
+            }))
         }
     }
 }

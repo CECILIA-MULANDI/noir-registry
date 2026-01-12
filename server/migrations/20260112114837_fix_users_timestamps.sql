@@ -1,0 +1,6 @@
+-- Fix users table timestamp columns to use TIMESTAMPTZ instead of TIMESTAMP
+-- This matches the Rust chrono::DateTime<Utc> type expectations
+
+ALTER TABLE users 
+    ALTER COLUMN created_at TYPE TIMESTAMPTZ USING created_at AT TIME ZONE 'UTC',
+    ALTER COLUMN updated_at TYPE TIMESTAMPTZ USING updated_at AT TIME ZONE 'UTC';

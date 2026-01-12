@@ -25,6 +25,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("   GET /api/packages - List all packages");
     println!("   GET /api/packages/:name - Get package by name");
     println!("   GET /api/search?q=query - Search packages");
+    println!("   POST /api/packages/publish - Publish a package (requires API key)");
 
     let listener = tokio::net::TcpListener::bind(&addr).await?;
     println!("✅ Server running!");
@@ -32,4 +33,3 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     Ok(())
 }
-

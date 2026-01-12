@@ -1,19 +1,18 @@
+use crate::auth;
+use crate::models::PackageResponse;
+use crate::package_storage;
+use anyhow::Result;
 use axum::body::Body;
 use axum::{
     Router,
     extract::{Path, Query, State},
-    http::StatusCode,
+    http::{HeaderMap, StatusCode},
     response::{Json, Response},
-    routing::get,
+    routing::{get, post},
 };
-
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use std::sync::Arc;
-
-use crate::models::PackageResponse;
-use crate::package_storage;
-
 use tower_http::cors::{AllowHeaders, AllowMethods, AllowOrigin, Any, CorsLayer};
 
 /// This is the application state that we should share across all handlers
@@ -27,13 +26,27 @@ pub struct AppState {
 pub struct SearchQuery {
     pub q: String,
 }
-
+#[derive(Debug, Deserialize)]
+pub struct PublishRequest {
+    pub name: String,
+    pub description: Option<String>,
+    pub github_repository_url: String,
+    pub version: Option<String>,
+    pub license: Option<String>,
+    pub homepage: Option<String>,
+}
+#[derive(Debug, Serialize)]
+pub struct PublishResponse {
+    pub success: bool,
+    pub message: String,
+    pub package_id: Option<i32>,
+}
 /// Creates the API router with all routes
 
 pub fn create_router(db: PgPool) -> Router {
     let state = Arc::new(AppState { db });
 
-    // Production-safe CORS configuration
+    // CORS configuration
     let allowed_origins = std::env::var("ALLOWED_ORIGINS")
         .unwrap_or_else(|_| "*".to_string())
         .split(',')
@@ -67,6 +80,7 @@ pub fn create_router(db: PgPool) -> Router {
         .route("/api/packages/:name", get(get_package))
         .route("/api/search", get(search))
         .route("/health", get(health_check))
+        .route("/api/packages/publish", post(publish_package))
         .layer(cors)
         .with_state(state)
 }
@@ -127,13 +141,12 @@ async fn search(
     }
 }
 
-/// GET (/health) endpoint to check health 
-async fn health_check(State(state): State<Arc<AppState>>) -> Result<Json<serde_json::Value>, StatusCode> {
+/// GET (/health) endpoint to check health
+async fn health_check(
+    State(state): State<Arc<AppState>>,
+) -> Result<Json<serde_json::Value>, StatusCode> {
     // Check database connection
-    match sqlx::query("SELECT 1")
-        .execute(&state.db)
-        .await
-    {
+    match sqlx::query("SELECT 1").execute(&state.db).await {
         Ok(_) => Ok(Json(serde_json::json!({
             "status": "healthy",
             "database": "connected",
@@ -145,4 +158,120 @@ async fn health_check(State(state): State<Arc<AppState>>) -> Result<Json<serde_j
         }
     }
 }
+/// POST /api/packages/publish
+/// Requires: Authorization:Bearer <api_key> header
+pub async fn publish_package(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+    Json(payload): Json<PublishRequest>,
+) -> Result<Json<PublishResponse>, StatusCode> {
+    // Extract API key from Authorization header
+    let api_key = headers
+        .get("Authorization")
+        .and_then(|h| h.to_str().ok())
+        .and_then(|s| s.strip_prefix("Bearer "))
+        .ok_or_else(|| {
+            eprintln!("Missing Authorization header");
+            StatusCode::UNAUTHORIZED
+        })?;
 
+    // Validate API key and get user
+    let user = auth::validate_api_key(&state.db, api_key)
+        .await
+        .map_err(|e| {
+            eprintln!("Error validating API key: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?
+        .ok_or_else(|| {
+            eprintln!("Invalid API key");
+            StatusCode::UNAUTHORIZED
+        })?;
+
+    // Parse GitHub URL to get owner/repo
+    let (owner, _repo) =
+        parse_github_url(&payload.github_repository_url).map_err(|_| StatusCode::BAD_REQUEST)?;
+
+    // Verify GitHub repo ownership (simplified - I'll enhance this later)
+    // For now, I'll trust the API key and assume user has access
+
+    // Validate package name
+    if !is_valid_package_name(&payload.name) {
+        return Ok(Json(PublishResponse {
+            success: false,
+            message:
+                "Invalid package name. Must be alphanumeric with hyphens/underscores, max 50 chars"
+                    .to_string(),
+            package_id: None,
+        }));
+    }
+
+    // Insert or update package
+    match insert_or_update_package(&state.db, &payload, user.id, &owner).await {
+        Ok(package_id) => Ok(Json(PublishResponse {
+            success: true,
+            message: "Package published successfully".to_string(),
+            package_id: Some(package_id),
+        })),
+        Err(e) => {
+            eprintln!("Error publishing package: {}", e);
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}
+/// Validate package name (alphanumeric, hyphens, underscores)
+fn is_valid_package_name(name: &str) -> bool {
+    !name.is_empty()
+        && name.len() <= 50
+        && name
+            .chars()
+            .all(|c| c.is_alphanumeric() || c == '-' || c == '_')
+}
+
+/// Parse GitHub URL to extract owner and repo
+fn parse_github_url(url: &str) -> Result<(String, String)> {
+    let parts: Vec<&str> = url.split('/').collect();
+    if parts.len() >= 5 && url.contains("github.com") {
+        Ok((
+            parts[3].to_string(),
+            parts[4].trim_end_matches(".git").to_string(),
+        ))
+    } else {
+        Err(anyhow::anyhow!("Invalid GitHub URL"))
+    }
+}
+
+/// Insert or update package in database
+async fn insert_or_update_package(
+    pool: &PgPool,
+    payload: &PublishRequest,
+    user_id: i32,
+    owner: &str,
+) -> Result<i32> {
+    let result = sqlx::query!(
+        r#"
+        INSERT INTO packages (
+            name, description, github_repository_url, homepage, license,
+            owner_github_username, published_by, source
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'user-published')
+        ON CONFLICT (name) DO UPDATE SET
+            description = EXCLUDED.description,
+            github_repository_url = EXCLUDED.github_repository_url,
+            homepage = EXCLUDED.homepage,
+            license = EXCLUDED.license,
+            updated_at = CURRENT_TIMESTAMP,
+            published_by = EXCLUDED.published_by
+        RETURNING id
+        "#,
+        payload.name,
+        payload.description,
+        payload.github_repository_url,
+        payload.homepage,
+        payload.license,
+        owner,
+        user_id
+    )
+    .fetch_one(pool)
+    .await?;
+
+    Ok(result.id)
+}

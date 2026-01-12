@@ -1,9 +1,11 @@
 #!/bin/bash
 # Script to run database migrations using sqlx-cli
 
-# Load environment variables if .env exists
+# Load environment variables if .env exists (check current dir and parent)
 if [ -f .env ]; then
     export $(cat .env | grep -v '^#' | xargs)
+elif [ -f ../.env ]; then
+    export $(cat ../.env | grep -v '^#' | xargs)
 fi
 
 # Check if DATABASE_URL is set
@@ -24,4 +26,3 @@ else
     echo "❌ Migration failed!"
     exit 1
 fi
-

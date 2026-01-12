@@ -1204,6 +1204,7 @@ dependencies = [
  "axum",
  "chrono",
  "dotenvy",
+ "rand",
  "regex",
  "reqwest",
  "serde",

@@ -142,4 +142,3 @@ fn parse_packages(readme: &str) -> Result<Vec<Package>> {
 
     Ok(packages)
 }
-

@@ -60,4 +60,3 @@ pub async fn enrich_package(
         homepage: github_data.homepage,
     })
 }
-

@@ -33,8 +33,14 @@ pub async fn create_pool() -> Result<PgPool> {
 
         // Log URL changes for debugging
         if original_url != database_url {
-            println!("   Original: {}", original_url.split('@').last().unwrap_or(&original_url));
-            println!("   Updated:  {}", database_url.split('@').last().unwrap_or(&database_url));
+            println!(
+                "   Original: {}",
+                original_url.split('@').last().unwrap_or(&original_url)
+            );
+            println!(
+                "   Updated:  {}",
+                database_url.split('@').last().unwrap_or(&database_url)
+            );
         } else {
             println!("✅ DATABASE_URL is properly configured");
         }
@@ -125,4 +131,3 @@ pub async fn init_db() -> Result<PgPool, Box<dyn std::error::Error>> {
     run_migrations(&pool).await?;
     Ok(pool)
 }
-

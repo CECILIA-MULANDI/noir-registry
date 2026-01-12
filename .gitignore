@@ -5,3 +5,7 @@ target/
 .env
 node_modules/
 .next/
+
+# Ignore all .md files except README.md
+*.md
+!README.md

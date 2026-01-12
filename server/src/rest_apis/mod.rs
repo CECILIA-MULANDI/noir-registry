@@ -188,11 +188,33 @@ pub async fn publish_package(
         })?;
 
     // Parse GitHub URL to get owner/repo
-    let (owner, _repo) =
+    let (owner, repo) =
         parse_github_url(&payload.github_repository_url).map_err(|_| StatusCode::BAD_REQUEST)?;
 
-    // Verify GitHub repo ownership (simplified - I'll enhance this later)
-    // For now, I'll trust the API key and assume user has access
+    // Verify GitHub repo ownership
+    match verify_github_ownership(&owner, &repo, &user.github_username).await {
+        Ok(true) => {
+            // User owns the repo, continue
+        }
+        Ok(false) => {
+            return Ok(Json(PublishResponse {
+                success: false,
+                message: format!(
+                    "You don't have permission to publish this package. The repository owner '{}' doesn't match your GitHub username '{}'",
+                    owner, user.github_username
+                ),
+                package_id: None,
+            }));
+        }
+        Err(e) => {
+            eprintln!("Error verifying GitHub ownership: {}", e);
+            return Ok(Json(PublishResponse {
+                success: false,
+                message: format!("Failed to verify repository ownership: {}", e),
+                package_id: None,
+            }));
+        }
+    }
 
     // Validate package name
     if !is_valid_package_name(&payload.name) {
@@ -217,6 +239,52 @@ pub async fn publish_package(
             Err(StatusCode::INTERNAL_SERVER_ERROR)
         }
     }
+}
+/// Verify that a user owns a GitHub repository
+/// Returns true if the repository owner matches the user's GitHub username
+async fn verify_github_ownership(
+    owner: &str,
+    repo: &str,
+    user_github_username: &str,
+) -> Result<bool> {
+    // Fetch repository info from GitHub API
+    let client = reqwest::Client::new();
+    let api_url = format!("https://api.github.com/repos/{}/{}", owner, repo);
+    eprintln!(
+        "🔍 Verifying ownership: repo={}/{}, user={}",
+        owner, repo, user_github_username
+    );
+    let response = client
+        .get(&api_url)
+        .header("User-Agent", "noir-registry")
+        .header("Accept", "application/vnd.github.v3+json")
+        .send()
+        .await?;
+
+    // If repository doesn't exist or is private, return false
+    if !response.status().is_success() {
+        if response.status() == 404 {
+            return Err(anyhow::anyhow!("Repository not found: {}/{}", owner, repo));
+        }
+        return Err(anyhow::anyhow!("GitHub API error: {}", response.status()));
+    }
+
+    // Parse the repository data
+    let repo_data: serde_json::Value = response.json().await?;
+    let repo_owner = repo_data
+        .get("owner")
+        .and_then(|o| o.get("login"))
+        .and_then(|l| l.as_str())
+        .ok_or_else(|| anyhow::anyhow!("Failed to parse repository owner"))?;
+    eprintln!(
+        "🔍 Repo owner: '{}', User: '{}', Match: {}",
+        repo_owner,
+        user_github_username,
+        repo_owner.eq_ignore_ascii_case(user_github_username)
+    );
+
+    // Check if the repository owner matches the user's GitHub username
+    Ok(repo_owner.eq_ignore_ascii_case(user_github_username))
 }
 /// Validate package name (alphanumeric, hyphens, underscores)
 fn is_valid_package_name(name: &str) -> bool {

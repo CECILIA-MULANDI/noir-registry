@@ -5,6 +5,7 @@ A centralized package registry for the Noir programming language ecosystem. Disc
 ## Quick Start
 
 **Using the API:**
+
 ```bash
 # List all packages
 curl http://109.205.177.65/api/packages
@@ -17,6 +18,7 @@ curl http://109.205.177.65/api/packages/CodeTracer
 ```
 
 **Using the CLI tool:**
+
 ```bash
 # Install
 cargo install nargo-add
@@ -29,20 +31,24 @@ nargo-add package-name
 ## Live Services
 
 ### Web Interface
+
 **Frontend:** [https://noir-registry.vercel.app/](https://noir-registry.vercel.app/)
 
 Browse packages, search, and explore the Noir package ecosystem through the web interface.
 
 ### API Server
+
 **Base URL:** `http://109.205.177.65`
 
 **Available Endpoints:**
+
 - `GET /health` - Health check
 - `GET /api/packages` - List all packages
 - `GET /api/packages/:name` - Get package by name
 - `GET /api/search?q=query` - Search packages
 
 **Try it:**
+
 ```bash
 curl http://109.205.177.65/health
 curl http://109.205.177.65/api/packages | head -20
@@ -58,6 +64,7 @@ cargo install nargo-add
 ```
 
 **Usage:**
+
 ```bash
 cd your-noir-project
 nargo-add package-name
@@ -70,6 +77,7 @@ The tool automatically fetches package info from the registry and adds it to you
 The frontend is built with Next.js and deployed at **[https://noir-registry.vercel.app/](https://noir-registry.vercel.app/)**.
 
 **Features:**
+
 - Browse all packages
 - Search functionality
 - Package detail pages
@@ -92,5 +100,3 @@ Visit the [web interface](https://noir-registry.vercel.app/) to explore packages
 ## Contributing
 
 We welcome contributions! Please open an issue or submit a pull request.
-
-

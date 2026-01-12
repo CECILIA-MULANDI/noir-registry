@@ -12,6 +12,16 @@ const rawApiUrl = typeof window === 'undefined'
   : '/api';
 const API_BASE_URL = normalizeApiUrl(rawApiUrl);
 
+// Ensure the URL is properly formatted (fix any double slashes or missing slashes)
+function ensureProperUrl(base: string, path: string): string {
+  // Remove trailing slashes from base
+  const cleanBase = base.replace(/\/+$/, '');
+  // Remove leading slashes from path
+  const cleanPath = path.replace(/^\/+/, '');
+  // Combine and replace any double slashes (except after http:)
+  return `${cleanBase}/${cleanPath}`.replace(/([^:]\/)\/+/g, '$1');
+}
+
 // Debug: Log the API URL in development (helps catch configuration issues)
 if (typeof window === 'undefined' && process.env.NODE_ENV === 'development') {
   console.log('[API] Raw API URL:', rawApiUrl);
@@ -20,7 +30,7 @@ if (typeof window === 'undefined' && process.env.NODE_ENV === 'development') {
 
 /// Function to get all packages from the API
 export async function getPackages(): Promise<Package[]> {
-    const url = `${API_BASE_URL}/packages`.replace(/\/+/g, '/'); // Ensure no double slashes
+    const url = ensureProperUrl(API_BASE_URL, '/packages');
     
     // Debug logging (only in development)
     if (process.env.NODE_ENV === 'development') {
@@ -72,7 +82,7 @@ export async function getPackages(): Promise<Package[]> {
   }
   ///Function to search for a package
   export async function searchPackages(query: string): Promise<Package[]> {
-    const url = `${API_BASE_URL}/search?q=${encodeURIComponent(query)}`.replace(/\/+/g, '/');
+    const url = `${ensureProperUrl(API_BASE_URL, '/search')}?q=${encodeURIComponent(query)}`;
     try{
       const res = await fetch(url, {
         cache: 'no-store'
@@ -90,7 +100,7 @@ export async function getPackages(): Promise<Package[]> {
     
   }
   export async function getPackageByName(name: string): Promise<Package | null> {
-    const url = `${API_BASE_URL}/packages/${encodeURIComponent(name)}`.replace(/\/+/g, '/');
+    const url = ensureProperUrl(API_BASE_URL, `/packages/${encodeURIComponent(name)}`);
     try {
       const res = await fetch(url, {
         cache: 'no-store'

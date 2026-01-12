@@ -6,6 +6,10 @@ import StatsSection from './components/StatsSection';
 import PackageCard from './components/PackageCard';
 import Footer from './components/Footer';
 
+// Force dynamic rendering - packages change frequently
+export const dynamic = 'force-dynamic';
+export const revalidate = 60; // Revalidate every 60 seconds
+
 export default async function HomePage() {
   const packages = await getPackages();
 

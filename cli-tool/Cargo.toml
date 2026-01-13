@@ -1,6 +1,6 @@
 [package]
 name = "nargo-add"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
 authors = ["Cecilia Mulandi <mulandicecilia4@gmail.com>"]
 description = "Add packages from the Noir registry to your Nargo.toml"

@@ -25,7 +25,7 @@ cargo install nargo-add
 
 # Use in your Noir project
 cd your-noir-project
-nargo-add package-name
+nargo add package-name
 ```
 
 ## Live Services
@@ -55,7 +55,7 @@ curl http://109.205.177.65/api/packages | head -20
 curl "http://109.205.177.65/api/search?q=cryptography"
 ```
 
-## CLI Tool: nargo-add
+## CLI Tool: nargo add
 
 Install the CLI tool to easily add packages to your Noir projects:
 
@@ -67,10 +67,10 @@ cargo install nargo-add
 
 ```bash
 cd your-noir-project
-nargo-add package-name
+nargo add package-name
 ```
 
-The tool automatically fetches package info from the registry and adds it to your `Nargo.toml`. See [cli-tool/README.md](cli-tool/README.md) for more details.
+The tool automatically fetches package info from the registry and adds it to your `Nargo.toml`. After installation, you can use `nargo add` directly - it works seamlessly with your existing `nargo` installation. See [cli-tool/README.md](cli-tool/README.md) for more details.
 
 ## Frontend Web Interface
 

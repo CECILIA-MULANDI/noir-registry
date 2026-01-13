@@ -62,9 +62,12 @@ export default function DocsPage() {
               </p>
               <div className="bg-black rounded-lg p-4 font-mono text-sm overflow-x-auto">
                 <code style={{ color: '#00ff00' }}>
-                  nargo-add package-name
+                  nargo add package-name
                 </code>
               </div>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                <strong>Note:</strong> After installing <code className="px-1 py-0.5 rounded font-mono text-xs" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}>nargo-add</code>, you can use <code className="px-1 py-0.5 rounded font-mono text-xs" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}>nargo add</code> directly. The tool also works with <code className="px-1 py-0.5 rounded font-mono text-xs" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}>nargo-add package-name</code> if you prefer.
+              </p>
               <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
                 Replace <code className="px-1 py-0.5 rounded font-mono text-xs" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}>package-name</code> with the actual package name from the registry.
               </p>

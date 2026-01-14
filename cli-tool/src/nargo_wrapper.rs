@@ -33,6 +33,31 @@ fn main() {
                 std::process::exit(1);
             }
         }
+    }
+    // Handle "publish" command
+    else if args.len() > 1 && args[1] == "publish" {
+        let nargo_publish_path = find_binary("nargo-publish").unwrap_or_else(|| {
+            eprintln!("❌ Error: Could not find nargo-publish binary");
+            eprintln!("   Please ensure nargo-publish is installed and in your PATH");
+            eprintln!("   Install with: cargo install --path cli-tool --bin nargo-publish");
+            std::process::exit(1);
+        });
+
+        let mut cmd = Command::new(&nargo_publish_path);
+        if args.len() > 2 {
+            cmd.args(&args[2..]);
+        }
+
+        match cmd.status() {
+            Ok(status) => {
+                std::process::exit(status.code().unwrap_or(1));
+            }
+            Err(e) => {
+                eprintln!("❌ Failed to execute nargo-publish: {}", e);
+                eprintln!("   Path tried: {:?}", nargo_publish_path);
+                std::process::exit(1);
+            }
+        }
     } else {
         // For all other commands, pass through to the real nargo
         let real_nargo = find_real_nargo().unwrap_or_else(|| {
@@ -94,7 +119,45 @@ fn find_nargo_add() -> Option<PathBuf> {
 
     None
 }
+/// Find a binary (nargo-add, nargo-publish, etc.) in PATH or common locations
+fn find_binary(binary_name: &str) -> Option<PathBuf> {
+    // First, try to find in the same directory as this wrapper
+    if let Ok(current_exe) = env::current_exe() {
+        let same_dir = current_exe.with_file_name(binary_name);
+        if same_dir.exists() {
+            return Some(same_dir);
+        }
+    }
 
+    // If not found, search in PATH
+    if let Ok(path) = env::var("PATH") {
+        for dir in path.split(':') {
+            let candidate = std::path::Path::new(dir).join(binary_name);
+            if candidate.exists() {
+                return Some(candidate);
+            }
+        }
+    }
+
+    // Fallback: try common installation locations
+    if let Ok(home) = env::var("HOME") {
+        let common_paths = vec![
+            format!("{}/.cargo/bin/{}", home, binary_name),
+            format!("{}/.local/bin/{}", home, binary_name),
+            format!("/usr/local/bin/{}", binary_name),
+            format!("/usr/bin/{}", binary_name),
+        ];
+
+        for path_str in common_paths {
+            let path = std::path::Path::new(&path_str);
+            if path.exists() {
+                return Some(path.to_path_buf());
+            }
+        }
+    }
+
+    None
+}
 fn find_real_nargo() -> Option<String> {
     // First, try to find nargo in PATH (but skip ourselves)
     if let Ok(path) = env::var("PATH") {

@@ -11,6 +11,7 @@ fn main() {
         let binary_name = match command.as_str() {
             "add" => "nargo-add",
             "publish" => "nargo-publish",
+            "login" => "nargo-login",
             _ => {
                 // Not one of our commands, pass through to real nargo
                 let real_nargo = find_real_nargo().unwrap_or_else(|| {

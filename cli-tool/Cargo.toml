@@ -25,6 +25,9 @@ path = "src/nargo_wrapper.rs"
 [[bin]]
 name = "nargo-publish"
 path = "src/publish.rs"
+[[bin]]
+name = "nargo-login"
+path = "src/login.rs"
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 anyhow = "1.0"
@@ -34,3 +37,4 @@ reqwest = { version = "0.11", features = ["json"] }
 clap = { version = "4.5", features = ["derive"] }
 toml_edit = "0.22"
 dirs = "5.0"
+toml = "0.8"

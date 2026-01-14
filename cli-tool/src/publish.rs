@@ -1,6 +1,6 @@
 use anyhow::{Context, Result};
 use clap::Parser;
-use nargo_add::{nargo_toml, utils};
+use nargo_add::{auth, config, nargo_toml, utils};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use std::path::PathBuf;
@@ -45,19 +45,6 @@ struct PublishRequest {
     homepage: Option<String>,
 }
 
-#[derive(Deserialize)]
-struct GitHubAuthResponse {
-    success: bool,
-    api_key: Option<String>,
-    message: String,
-    #[allow(dead_code)]
-    github_username: Option<String>,
-}
-
-#[derive(Serialize)]
-struct GitHubAuthRequest {
-    github_token: String,
-}
 /// Gets GitHub repository URL from git remote
 fn get_git_remote_url() -> Result<String> {
     use std::process::Command;
@@ -88,39 +75,6 @@ fn get_git_remote_url() -> Result<String> {
     };
 
     Ok(url)
-}
-
-/// Authenticates with GitHub and returns API key
-async fn authenticate_github(registry_url: &str, github_token: &str) -> Result<String> {
-    let client = Client::new();
-    let auth_url = format!("{}/auth/github", registry_url.trim_end_matches('/'));
-
-    let response = client
-        .post(&auth_url)
-        .json(&GitHubAuthRequest {
-            github_token: github_token.to_string(),
-        })
-        .send()
-        .await
-        .context("Failed to connect to registry")?;
-
-    if !response.status().is_success() {
-        let error_text = response.text().await.unwrap_or_default();
-        anyhow::bail!("Authentication failed: {}", error_text);
-    }
-
-    let auth_response: GitHubAuthResponse = response
-        .json()
-        .await
-        .context("Failed to parse authentication response")?;
-
-    if !auth_response.success {
-        anyhow::bail!("Authentication failed: {}", auth_response.message);
-    }
-
-    auth_response
-        .api_key
-        .context("No API key received from authentication")
 }
 
 /// Publishes a package to the registry
@@ -206,19 +160,44 @@ async fn main() -> Result<()> {
         }
     };
 
-    // Get GitHub token (from arg or env var)
-    let github_token = args.github_token
-        .or_else(|| std::env::var("GITHUB_TOKEN").ok())
-        .ok_or_else(|| {
-            anyhow::anyhow!(
-                "GitHub token required. Provide --github-token <token> or set GITHUB_TOKEN env var.\n\
-                Create a token at: https://github.com/settings/tokens (with 'repo' scope)"
-            )
-        })?;
+    // Get API key (from config, or authenticate with GitHub token)
+    let api_key = if let Ok(cfg) = config::Config::load() {
+        if let Some(stored_api_key) = cfg.get_api_key() {
+            eprintln!("✅ Using stored credentials");
+            stored_api_key.to_string()
+        } else {
+            // No stored credentials, need to authenticate
+            let github_token = args.github_token
+                .or_else(|| std::env::var("GITHUB_TOKEN").ok())
+                .ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "Not logged in. Run 'nargo login' first, or provide --github-token <token>.\n\
+                        Create a token at: https://github.com/settings/tokens (with 'repo' scope)"
+                    )
+                })?;
 
-    eprintln!("🔐 Authenticating with GitHub...");
-    let api_key = authenticate_github(&registry_url, &github_token).await?;
-    eprintln!("✅ Authentication successful");
+            eprintln!("🔐 Authenticating with GitHub...");
+            let key = auth::authenticate_github(&registry_url, &github_token).await?;
+            eprintln!("✅ Authentication successful");
+            key
+        }
+    } else {
+        // Config file error, fall back to token auth
+        let github_token = args
+            .github_token
+            .or_else(|| std::env::var("GITHUB_TOKEN").ok())
+            .ok_or_else(|| {
+                anyhow::anyhow!(
+                    "Not logged in. Run 'nargo login' first, or provide --github-token <token>.\n\
+                    Create a token at: https://github.com/settings/tokens (with 'repo' scope)"
+                )
+            })?;
+
+        eprintln!("🔐 Authenticating with GitHub...");
+        let key = auth::authenticate_github(&registry_url, &github_token).await?;
+        eprintln!("✅ Authentication successful");
+        key
+    };
 
     // Build publish request
     let publish_request = PublishRequest {

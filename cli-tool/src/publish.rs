@@ -1,10 +1,9 @@
 use anyhow::{Context, Result};
 use clap::Parser;
+use nargo_add::{nargo_toml, utils};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::{Path, PathBuf};
-use toml_edit::DocumentMut;
+use std::path::PathBuf;
 #[derive(Parser)]
 #[command(name = "nargo-publish")]
 #[command(about = "Publish a package to the Noir registry(use: nargo publish)")]
@@ -58,47 +57,6 @@ struct GitHubAuthResponse {
 #[derive(Serialize)]
 struct GitHubAuthRequest {
     github_token: String,
-}
-/// Get the registry URL from args, env var, or default
-fn get_registry_url(args_registry: Option<String>) -> String {
-    args_registry
-        .or_else(|| std::env::var("NOIR_REGISTRY_URL").ok())
-        .unwrap_or_else(|| "http://109.205.177.65/api".to_string())
-}
-/// Finds Nargo.toml
-fn find_nargo_toml(start_dir: &Path) -> Result<PathBuf> {
-    let mut current = start_dir.to_path_buf();
-    loop {
-        let manifest = current.join("Nargo.toml");
-        if manifest.exists() {
-            return Ok(manifest);
-        }
-        match current.parent() {
-            Some(parent) => current = parent.to_path_buf(),
-            None => anyhow::bail!("Could not find Nargo.toml in current directory or parents"),
-        }
-    }
-}
-/// Reads package name from Nargo.toml
-fn read_package_name(manifest_path: &Path) -> Result<String> {
-    let content = fs::read_to_string(manifest_path)
-        .with_context(|| format!("Failed to read {}", manifest_path.display()))?;
-
-    let doc = content
-        .parse::<DocumentMut>()
-        .context("Failed to parse Nargo.toml")?;
-
-    let package_table = doc
-        .get("package")
-        .and_then(|p| p.as_table())
-        .context("Nargo.toml does not contain [package] section")?;
-
-    let name = package_table
-        .get("name")
-        .and_then(|n| n.as_str())
-        .context("Package name not found in Nargo.toml")?;
-
-    Ok(name.to_string())
 }
 /// Gets GitHub repository URL from git remote
 fn get_git_remote_url() -> Result<String> {
@@ -208,7 +166,7 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     // Get registry URL
-    let registry_url = get_registry_url(args.registry);
+    let registry_url = utils::get_registry_url(args.registry);
 
     // Find Nargo.toml
     let current_dir = std::env::current_dir().context("Failed to get current directory")?;
@@ -219,7 +177,7 @@ async fn main() -> Result<()> {
             }
             path
         }
-        None => find_nargo_toml(&current_dir)?,
+        None => nargo_toml::find_nargo_toml(&current_dir)?,
     };
 
     eprintln!(
@@ -228,7 +186,7 @@ async fn main() -> Result<()> {
     );
 
     // Read package name
-    let package_name = read_package_name(&manifest_path)?;
+    let package_name = nargo_toml::read_package_name(&manifest_path)?;
     eprintln!("✅ Package name: {}", package_name);
 
     // Get GitHub repository URL

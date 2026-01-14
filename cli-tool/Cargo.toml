@@ -11,9 +11,13 @@ documentation = "https://docs.rs/nargo-add"
 keywords = ["noir", "nargo", "package-manager", "cli"]
 categories = ["development-tools", "command-line-utilities"]
 
+[lib]
+name = "nargo_add"
+path = "src/lib.rs"
+
 [[bin]]
 name = "nargo-add"
-path = "src/main.rs"
+path = "src/add.rs"
 
 [[bin]]
 name = "nargo"

@@ -1,9 +1,10 @@
 use anyhow::{Context, Result};
 use clap::Parser;
+use nargo_add::{nargo_toml, utils};
 use reqwest::Client;
 use serde::Deserialize;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use toml_edit::{DocumentMut, InlineTable, Item, Table};
 
 #[derive(Parser)]
@@ -20,7 +21,7 @@ struct Args {
 
     /// Path to Nargo.toml (optional, will search from current directory)
     #[arg(long)]
-    manifest_path: Option<PathBuf>,
+    manifest_path: Option<std::path::PathBuf>,
 }
 
 #[derive(Deserialize)]
@@ -28,31 +29,6 @@ struct PackageInfo {
     name: String,
     github_repository_url: String,
     latest_version: Option<String>,
-}
-
-/// Finds Nargo.toml by walking up from the current directory
-fn find_nargo_toml(start_dir: &Path) -> Result<PathBuf> {
-    let mut current = start_dir.to_path_buf();
-
-    loop {
-        let manifest = current.join("Nargo.toml");
-        if manifest.exists() {
-            return Ok(manifest);
-        }
-
-        // Go up one directory
-        match current.parent() {
-            Some(parent) => current = parent.to_path_buf(),
-            None => anyhow::bail!("Could not find Nargo.toml in current directory or parents"),
-        }
-    }
-}
-
-/// Gets the registry URL from args, env var, or default
-fn get_registry_url(args_registry: Option<String>) -> String {
-    args_registry
-        .or_else(|| std::env::var("NOIR_REGISTRY_URL").ok())
-        .unwrap_or_else(|| "http://109.205.177.65/api".to_string())
 }
 
 /// Fetches package information from the registry with retry logic
@@ -190,7 +166,7 @@ async fn main() -> Result<()> {
     let args = Args::parse();
 
     // Get registry URL
-    let registry_url = get_registry_url(args.registry);
+    let registry_url = utils::get_registry_url(args.registry);
 
     // Find Nargo.toml
     let current_dir = std::env::current_dir().context("Failed to get current directory")?;
@@ -201,7 +177,7 @@ async fn main() -> Result<()> {
             }
             path
         }
-        None => find_nargo_toml(&current_dir)?,
+        None => nargo_toml::find_nargo_toml(&current_dir)?,
     };
 
     eprintln!(
@@ -246,7 +222,7 @@ async fn main() -> Result<()> {
             );
 
             // Validate the TOML was written correctly
-            if let Err(e) = validate_nargo_toml(&manifest_path) {
+            if let Err(e) = nargo_toml::validate_nargo_toml(&manifest_path) {
                 eprintln!("⚠️  Warning: Could not validate Nargo.toml: {}", e);
                 eprintln!("   Please check the file manually");
             }
@@ -256,18 +232,6 @@ async fn main() -> Result<()> {
             return Err(e);
         }
     }
-
-    Ok(())
-}
-
-/// Validates that the Nargo.toml file is still valid TOML after our changes
-fn validate_nargo_toml(manifest_path: &Path) -> Result<()> {
-    let content = fs::read_to_string(manifest_path)
-        .with_context(|| format!("Failed to read {}", manifest_path.display()))?;
-
-    content
-        .parse::<DocumentMut>()
-        .context("Nargo.toml is not valid TOML after modification")?;
 
     Ok(())
 }

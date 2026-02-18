@@ -1,6 +1,6 @@
 # nargo-add CLI Tool
 
-A CLI tool to add packages from the Noir registry to your `Nargo.toml`.
+A CLI tool to add and remove packages from the Noir registry in your `Nargo.toml`.
 
 ## Installation
 
@@ -46,7 +46,7 @@ cp target/release/nargo-add ~/.local/bin/
 
 ## Usage
 
-Once installed, use `nargo add` in your Noir project (recommended):
+Once installed, use `nargo add` and `nargo remove` in your Noir project (recommended):
 
 ```bash
 # Navigate to your Noir project
@@ -60,12 +60,22 @@ nargo add rocq-of-noir --registry http://your-registry.com/api
 
 # Add with specific Nargo.toml path
 nargo add rocq-of-noir --manifest-path /path/to/Nargo.toml
+
+# Remove a package
+nargo remove rocq-of-noir
+
+# Remove multiple packages at once
+nargo remove rocq-of-noir ECrecover
+
+# Remove with specific Nargo.toml path
+nargo remove rocq-of-noir --manifest-path /path/to/Nargo.toml
 ```
 
-**Alternative:** You can also use `nargo-add` directly:
+**Alternative:** You can also use the binaries directly:
 
 ```bash
 nargo-add rocq-of-noir
+nargo-remove rocq-of-noir
 ```
 
 ## Example Workflow
@@ -81,13 +91,26 @@ nargo add ECrecover
 
 # 3. Your Nargo.toml now has the dependencies
 cat Nargo.toml
+
+# 4. Remove a dependency you no longer need
+nargo remove ECrecover
+
+# 5. Verify it was removed
+cat Nargo.toml
 ```
 
 ## How it works
 
+**`nargo add`:**
 - Fetches package information from your registry API
 - Finds `Nargo.toml` in the current directory (or walks up to find it)
 - Adds the dependency with the correct format: `package-name = { git = "url" }`
+
+**`nargo remove`:**
+- Finds `Nargo.toml` in the current directory (or walks up to find it)
+- Removes the named dependency from the `[dependencies]` section
+- Supports removing multiple packages in a single command
+- Validates the TOML file is still well-formed after removal
 
 ## Requirements
 
@@ -157,4 +180,10 @@ nargo add rocq-of-noir
 **"Dependency already exists"**
 
 - The tool prevents duplicate dependencies
-- To update, manually edit Nargo.toml or remove and re-add
+- To update, remove and re-add: `nargo remove pkg && nargo add pkg`
+
+**"Dependency not found" (when removing)**
+
+- The package is not listed in your `Nargo.toml` `[dependencies]` section
+- Check the exact package name (case-sensitive)
+- Use `cat Nargo.toml` to see current dependencies

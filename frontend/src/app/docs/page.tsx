@@ -74,6 +74,36 @@ export default function DocsPage() {
             </div>
           </section>
 
+          {/* Removing Packages */}
+          <section className="mb-12">
+            <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
+              Removing Packages
+            </h2>
+            <div className="space-y-4">
+              <p style={{ color: 'var(--text-secondary)' }}>
+                To remove a package from your Noir project, use:
+              </p>
+              <div className="bg-black rounded-lg p-4 font-mono text-sm overflow-x-auto">
+                <code style={{ color: '#00ff00' }}>
+                  nargo remove package-name
+                </code>
+              </div>
+              <p style={{ color: 'var(--text-secondary)' }}>
+                You can also remove multiple packages at once:
+              </p>
+              <div className="bg-black rounded-lg p-4 font-mono text-sm overflow-x-auto">
+                <code style={{ color: '#00ff00' }}>
+                  nargo remove package-one package-two
+                </code>
+              </div>
+              <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                <strong>Note:</strong> This removes the dependency from your{' '}
+                <code className="px-1 py-0.5 rounded font-mono text-xs" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}>Nargo.toml</code>{' '}
+                file. It does not delete any downloaded source files.
+              </p>
+            </div>
+          </section>
+
           {/* Searching Packages */}
           <section className="mb-12">
             <h2 className="text-2xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>

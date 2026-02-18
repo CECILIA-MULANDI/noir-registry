@@ -26,6 +26,7 @@ cargo install nargo-add
 # Use in your Noir project
 cd your-noir-project
 nargo add package-name
+nargo remove package-name
 ```
 
 ## Live Services
@@ -55,9 +56,9 @@ curl http://109.205.177.65/api/packages | head -20
 curl "http://109.205.177.65/api/search?q=cryptography"
 ```
 
-## CLI Tool: nargo add
+## CLI Tool
 
-Install the CLI tool to easily add packages to your Noir projects:
+Install the CLI tool to easily manage packages in your Noir projects:
 
 ```bash
 cargo install nargo-add
@@ -68,9 +69,13 @@ cargo install nargo-add
 ```bash
 cd your-noir-project
 nargo add package-name
+nargo remove package-name
 ```
 
-The tool automatically fetches package info from the registry and adds it to your `Nargo.toml`. After installation, you can use `nargo add` directly - it works seamlessly with your existing `nargo` installation. See [cli-tool/README.md](cli-tool/README.md) for more details.
+- `nargo add` fetches package info from the registry and adds it to your `Nargo.toml`.
+- `nargo remove` removes a dependency from your `Nargo.toml`. Supports removing multiple packages at once: `nargo remove pkg1 pkg2`.
+
+After installation, you can use `nargo add` and `nargo remove` directly - they work seamlessly with your existing `nargo` installation. See [cli-tool/README.md](cli-tool/README.md) for more details.
 
 ## Frontend Web Interface
 

@@ -10,6 +10,7 @@ fn main() {
         let command = &args[1];
         let binary_name = match command.as_str() {
             "add" => "nargo-add",
+            "remove" => "nargo-remove",
             "publish" => "nargo-publish",
             "login" => "nargo-login",
             _ => {

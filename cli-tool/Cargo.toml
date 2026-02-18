@@ -28,6 +28,11 @@ path = "src/publish.rs"
 [[bin]]
 name = "nargo-login"
 path = "src/login.rs"
+
+[[bin]]
+name = "nargo-remove"
+path = "src/remove.rs"
+
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 anyhow = "1.0"

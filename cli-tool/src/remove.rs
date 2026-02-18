@@ -2,8 +2,9 @@ use anyhow::{Context, Result};
 use clap::Parser;
 use nargo_add::nargo_toml;
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use toml_edit::DocumentMut;
+use url::Url;
 
 #[derive(Parser)]
 #[command(name = "nargo-remove")]
@@ -17,14 +18,18 @@ struct Args {
     /// Path to Nargo.toml (optional, will search from current directory)
     #[arg(long)]
     manifest_path: Option<std::path::PathBuf>,
+
+    /// Also delete cached source files from ~/nargo
+    #[arg(long)]
+    clean: bool,
 }
 
 /// Removes a dependency from Nargo.toml.
-/// Returns Ok(true) if the dependency was found and removed, Ok(false) if it wasn't present.
+/// Returns Ok(Some(git_url)) if the dependency was found and removed, Ok(None) if it wasn't present.
 fn remove_dependency_from_nargo_toml(
     manifest_path: &Path,
     package_name: &str,
-) -> Result<bool> {
+) -> Result<Option<String>> {
     let content = fs::read_to_string(manifest_path)
         .with_context(|| format!("Failed to read {}", manifest_path.display()))?;
 
@@ -37,13 +42,26 @@ fn remove_dependency_from_nargo_toml(
         Some(deps) => deps,
         None => {
             // No [dependencies] section at all
-            return Ok(false);
+            return Ok(None);
         }
     };
 
-    // Check if the dependency exists
+    // Check if the dependency exists and extract the git URL before removing
+    let git_url = deps
+        .get(package_name)
+        .and_then(|item| {
+            // Could be an inline table like { git = "url" } or a regular table
+            if let Some(t) = item.as_inline_table() {
+                t.get("git").and_then(|v| v.as_str()).map(|s| s.to_string())
+            } else if let Some(t) = item.as_table() {
+                t.get("git").and_then(|v| v.as_str()).map(|s| s.to_string())
+            } else {
+                None
+            }
+        });
+
     if !deps.contains_key(package_name) {
-        return Ok(false);
+        return Ok(None);
     }
 
     // Remove the dependency
@@ -53,6 +71,49 @@ fn remove_dependency_from_nargo_toml(
     fs::write(manifest_path, doc.to_string())
         .with_context(|| format!("Failed to write {}", manifest_path.display()))?;
 
+    Ok(Some(git_url.unwrap_or_default()))
+}
+
+/// Derives the nargo cache directory for a git dependency URL.
+/// Nargo caches git deps at ~/nargo/<domain>/<owner>/<repo>/
+fn get_cache_dir_for_git_url(git_url: &str) -> Option<PathBuf> {
+    let url = Url::parse(git_url).ok()?;
+    let host = url.host_str()?;
+
+    // Path segments: /<owner>/<repo> — strip leading slash and .git suffix
+    let path = url.path().trim_start_matches('/').trim_end_matches(".git");
+    if path.is_empty() {
+        return None;
+    }
+
+    let home = dirs::home_dir()?;
+    Some(home.join("nargo").join(host).join(path))
+}
+
+/// Deletes the cached source directory for a dependency.
+fn clean_cached_source(git_url: &str) -> Result<bool> {
+    if git_url.is_empty() {
+        eprintln!("   ⚠️  No git URL found — cannot determine cache path");
+        return Ok(false);
+    }
+
+    let cache_dir = match get_cache_dir_for_git_url(git_url) {
+        Some(dir) => dir,
+        None => {
+            eprintln!("   ⚠️  Could not parse git URL '{}' — skipping cache cleanup", git_url);
+            return Ok(false);
+        }
+    };
+
+    if !cache_dir.exists() {
+        eprintln!("   ℹ️  No cached files found at {}", cache_dir.display());
+        return Ok(false);
+    }
+
+    fs::remove_dir_all(&cache_dir)
+        .with_context(|| format!("Failed to delete cache at {}", cache_dir.display()))?;
+
+    eprintln!("   🗑️  Deleted cached source: {}", cache_dir.display());
     Ok(true)
 }
 
@@ -77,11 +138,16 @@ fn main() -> Result<()> {
 
     for package_name in &args.package_names {
         match remove_dependency_from_nargo_toml(&manifest_path, package_name) {
-            Ok(true) => {
+            Ok(Some(git_url)) => {
                 eprintln!("✅ Removed '{}' from {}", package_name, manifest_path.display());
+                if args.clean {
+                    if let Err(e) = clean_cached_source(&git_url) {
+                        eprintln!("   ⚠️  Failed to clean cache for '{}': {}", package_name, e);
+                    }
+                }
                 removed.push(package_name.as_str());
             }
-            Ok(false) => {
+            Ok(None) => {
                 eprintln!(
                     "⚠️  Dependency '{}' not found in {}",
                     package_name,

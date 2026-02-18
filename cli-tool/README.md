@@ -67,6 +67,9 @@ nargo remove rocq-of-noir
 # Remove multiple packages at once
 nargo remove rocq-of-noir ECrecover
 
+# Remove and also delete cached source files from ~/nargo
+nargo remove rocq-of-noir --clean
+
 # Remove with specific Nargo.toml path
 nargo remove rocq-of-noir --manifest-path /path/to/Nargo.toml
 ```
@@ -110,6 +113,7 @@ cat Nargo.toml
 - Finds `Nargo.toml` in the current directory (or walks up to find it)
 - Removes the named dependency from the `[dependencies]` section
 - Supports removing multiple packages in a single command
+- With `--clean`, also deletes cached source files from `~/nargo/<domain>/<owner>/<repo>/`
 - Validates the TOML file is still well-formed after removal
 
 ## Requirements
@@ -133,7 +137,12 @@ nargo add rocq-of-noir
 
 ### Command Line Options
 
+**`nargo add`:**
 - `--registry <URL>` - Override registry URL for this command
+- `--manifest-path <PATH>` - Specify Nargo.toml path explicitly
+
+**`nargo remove`:**
+- `--clean` - Also delete cached source files from `~/nargo`
 - `--manifest-path <PATH>` - Specify Nargo.toml path explicitly
 
 ## Features

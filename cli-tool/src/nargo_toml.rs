@@ -53,3 +53,30 @@ pub fn validate_nargo_toml(manifest_path: &Path) -> Result<()> {
 
     Ok(())
 }
+
+/// Removes a dependency from Nargo.toml (used for rollback).
+/// Returns Ok(true) if removed, Ok(false) if the dependency was not present.
+pub fn remove_dependency(manifest_path: &Path, package_name: &str) -> Result<bool> {
+    let content = fs::read_to_string(manifest_path)
+        .with_context(|| format!("Failed to read {}", manifest_path.display()))?;
+
+    let mut doc = content
+        .parse::<DocumentMut>()
+        .context("Failed to parse Nargo.toml")?;
+
+    let deps = match doc.get_mut("dependencies").and_then(|d| d.as_table_mut()) {
+        Some(deps) => deps,
+        None => return Ok(false),
+    };
+
+    if !deps.contains_key(package_name) {
+        return Ok(false);
+    }
+
+    deps.remove(package_name);
+
+    fs::write(manifest_path, doc.to_string())
+        .with_context(|| format!("Failed to write {}", manifest_path.display()))?;
+
+    Ok(true)
+}

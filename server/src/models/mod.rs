@@ -1,5 +1,14 @@
 use serde::{Deserialize, Serialize};
 
+/// A package category (e.g. Cryptography, Math)
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Category {
+    pub id: i32,
+    pub name: String,
+    pub slug: String,
+    pub description: Option<String>,
+}
+
 /// This should contain the structure of the package we are scraping
 #[derive(Debug, Clone)]
 pub struct Package {
@@ -8,7 +17,7 @@ pub struct Package {
     pub description: String,
 }
 /// This is the structure of the package we expect from an API response
-#[derive(Debug, Clone, Serialize, sqlx::FromRow)]
+#[derive(Debug, Clone, Serialize)]
 pub struct PackageResponse {
     pub id: i32,
     pub name: String,
@@ -23,6 +32,7 @@ pub struct PackageResponse {
     pub latest_version: Option<String>,
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub keywords: Vec<String>,
 }
 /// GitHub API response for repository info
 #[derive(Debug, Deserialize)]

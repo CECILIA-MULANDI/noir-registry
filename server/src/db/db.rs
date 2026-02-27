@@ -46,7 +46,8 @@ pub async fn create_pool() -> Result<PgPool> {
         }
     }
 
-    let connect_options = PgConnectOptions::from_str(&database_url)?;
+    let connect_options = PgConnectOptions::from_str(&database_url)?
+        .statement_cache_capacity(0);
 
     // Production vs Development pool settings
     let mut pool_builder = PgPoolOptions::new();
@@ -128,6 +129,19 @@ pub async fn run_migrations(pool: &PgPool) -> Result<(), Box<dyn std::error::Err
 /// Initializes the database connection and runs migrations
 pub async fn init_db() -> Result<PgPool, Box<dyn std::error::Error>> {
     let pool = create_pool().await?;
-    run_migrations(&pool).await?;
+
+    let is_production = std::env::var("ENVIRONMENT")
+        .unwrap_or_else(|_| "development".to_string())
+        .eq_ignore_ascii_case("production");
+
+    if is_production {
+        // Skip migrations in production — sqlx::migrate!() uses named prepared statements
+        // internally which pollute the PgBouncer connection pool on failure.
+        // Run migrations manually: sqlx migrate run --database-url <URL>
+        println!("⏭️  Skipping auto-migrations in production (run manually if needed)");
+    } else {
+        run_migrations(&pool).await?;
+    }
+
     Ok(pool)
 }

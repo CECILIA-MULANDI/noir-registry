@@ -56,9 +56,9 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
               {packages.map((pkg) => (
                 <PackageCard
                   key={pkg.id}
-                  id={pkg.id}
                   name={pkg.name}
                   version={pkg.latest_version || 'v0.1.0'}
+                  keywords={pkg.keywords}
                 />
               ))}
             </div>

@@ -25,6 +25,12 @@ struct Args {
     github_token: Option<String>,
     #[arg(long)]
     manifest_path: Option<PathBuf>,
+    /// Comma-separated keywords (e.g. --keywords crypto,hash,math)
+    #[arg(long, value_delimiter = ',')]
+    keywords: Option<Vec<String>>,
+    /// Category slug (e.g. --category cryptography). Run `nargo publish --list-categories` to see options.
+    #[arg(long)]
+    category: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -43,6 +49,8 @@ struct PublishRequest {
     version: Option<String>,
     license: Option<String>,
     homepage: Option<String>,
+    keywords: Option<Vec<String>>,
+    category: Option<String>,
 }
 
 /// Gets GitHub repository URL from git remote
@@ -207,6 +215,8 @@ async fn main() -> Result<()> {
         version: args.package_version,
         license: args.license,
         homepage: args.homepage,
+        keywords: args.keywords,
+        category: args.category,
     };
 
     eprintln!("📤 Publishing package to registry...");

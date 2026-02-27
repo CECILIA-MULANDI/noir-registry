@@ -1,5 +1,4 @@
 import { getPackages } from './lib/api';
-import { Package } from './lib/types';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import StatsSection from './components/StatsSection';
@@ -17,7 +16,7 @@ export default async function HomePage() {
   const newPackages = [...packages]
     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 4);
-  
+
   const mostDownloaded = [...packages]
     .sort((a, b) => (b.github_stars || 0) - (a.github_stars || 0))
     .slice(0, 4);
@@ -31,7 +30,7 @@ export default async function HomePage() {
       <Header />
       <Hero />
       <StatsSection packageCount={packages.length} />
-      
+
       {/* Package Lists Section */}
       <section className="py-16" style={{ backgroundColor: 'var(--bg-darker)' }}>
         <div className="max-w-[1200px] mx-auto px-8">
@@ -46,9 +45,9 @@ export default async function HomePage() {
                   newPackages.map((pkg) => (
                     <PackageCard
                       key={pkg.id}
-                      id={pkg.id}
                       name={pkg.name}
                       version={pkg.latest_version || 'v0.1.0'}
+                      keywords={pkg.keywords}
                     />
                   ))
                 )}
@@ -65,9 +64,9 @@ export default async function HomePage() {
                   mostDownloaded.map((pkg) => (
                     <PackageCard
                       key={pkg.id}
-                      id={pkg.id}
                       name={pkg.name}
                       version={pkg.latest_version || 'v0.1.0'}
+                      keywords={pkg.keywords}
                     />
                   ))
                 )}
@@ -84,9 +83,9 @@ export default async function HomePage() {
                   justUpdated.map((pkg) => (
                     <PackageCard
                       key={pkg.id}
-                      id={pkg.id}
                       name={pkg.name}
                       version={pkg.latest_version || 'v0.1.0'}
+                      keywords={pkg.keywords}
                     />
                   ))
                 )}

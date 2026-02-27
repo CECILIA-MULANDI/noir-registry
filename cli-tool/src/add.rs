@@ -339,6 +339,18 @@ async fn main() -> Result<()> {
                 eprintln!("⚠️  Warning: Could not validate Nargo.toml: {}", e);
                 eprintln!("   Please check the file manually");
             }
+
+            // Record the download — fire-and-forget, non-fatal
+            let download_url = format!(
+                "{}/packages/{}/download",
+                registry_url.trim_end_matches('/'),
+                args.package_name
+            );
+            let ping_client = Client::builder()
+                .timeout(std::time::Duration::from_secs(5))
+                .build()
+                .unwrap_or_default();
+            let _ = ping_client.post(&download_url).send().await;
         }
         Err(e) => {
             eprintln!("❌ Failed to add dependency: {}", e);

@@ -1,4 +1,4 @@
-import { Package } from './types';
+import { Category, Package } from './types';
 
 // Normalize API base URL - remove trailing slashes and semicolons
 function normalizeApiUrl(url: string): string {
@@ -7,8 +7,8 @@ function normalizeApiUrl(url: string): string {
 
 // Use relative URL for client-side requests (goes through Next.js rewrite proxy)
 // Use full URL for server-side requests
-const rawApiUrl = typeof window === 'undefined' 
-  ? (process.env.NEXT_PUBLIC_API_URL || 'http://109.205.177.65/api')
+const rawApiUrl = typeof window === 'undefined'
+  ? (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api')
   : '/api';
 const API_BASE_URL = normalizeApiUrl(rawApiUrl);
 
@@ -20,6 +20,17 @@ function ensureProperUrl(base: string, path: string): string {
   const cleanPath = path.replace(/^\/+/, '');
   // Combine and replace any double slashes (except after http:)
   return `${cleanBase}/${cleanPath}`.replace(/([^:]\/)\/+/g, '$1');
+}
+
+// Fetch with a timeout so the UI never hangs indefinitely if the backend is down
+async function fetchWithTimeout(url: string, options: RequestInit = {}, ms = 8000): Promise<Response> {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), ms);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(id);
+  }
 }
 
 // Debug: Log the API URL in development (helps catch configuration issues)
@@ -38,10 +49,7 @@ export async function getPackages(): Promise<Package[]> {
     }
     
     try {
-      const res = await fetch(url, {
-        // We can always fetch fresh data
-        cache: 'no-store'
-      });
+      const res = await fetchWithTimeout(url, { cache: 'no-store' });
       if (!res.ok) {
         // Try to get error message from response (could be JSON or text)
         let errorText = res.statusText;
@@ -84,9 +92,7 @@ export async function getPackages(): Promise<Package[]> {
   export async function searchPackages(query: string): Promise<Package[]> {
     const url = `${ensureProperUrl(API_BASE_URL, '/search')}?q=${encodeURIComponent(query)}`;
     try{
-      const res = await fetch(url, {
-        cache: 'no-store'
-      })
+      const res = await fetchWithTimeout(url, { cache: 'no-store' })
       if (!res.ok) {
         console.error(`Failed to search packages: ${res.status} ${res.statusText}`);
         return [];
@@ -99,13 +105,64 @@ export async function getPackages(): Promise<Package[]> {
     }
     
   }
+  export async function getPackagesByKeyword(keyword: string): Promise<Package[]> {
+    const url = `${ensureProperUrl(API_BASE_URL, '/packages')}?keyword=${encodeURIComponent(keyword)}`;
+    try {
+      const res = await fetchWithTimeout(url, { cache: 'no-store' });
+      if (!res.ok) return [];
+      return res.json();
+    } catch {
+      return [];
+    }
+  }
+
+  export async function getPackagesByCategory(categorySlug: string): Promise<Package[]> {
+    const url = `${ensureProperUrl(API_BASE_URL, '/packages')}?category=${encodeURIComponent(categorySlug)}`;
+    try {
+      const res = await fetchWithTimeout(url, { cache: 'no-store' });
+      if (!res.ok) return [];
+      return res.json();
+    } catch {
+      return [];
+    }
+  }
+
+  export async function getKeywords(): Promise<string[]> {
+    const url = ensureProperUrl(API_BASE_URL, '/keywords');
+    try {
+      const res = await fetchWithTimeout(url, { cache: 'no-store' });
+      if (!res.ok) return [];
+      return res.json();
+    } catch {
+      return [];
+    }
+  }
+
+  export async function getCategories(): Promise<Category[]> {
+    const url = ensureProperUrl(API_BASE_URL, '/categories');
+    try {
+      const res = await fetchWithTimeout(url, { cache: 'no-store' });
+      if (!res.ok) return [];
+      return res.json();
+    } catch {
+      return [];
+    }
+  }
+
+  export async function recordDownload(packageName: string): Promise<void> {
+    const url = ensureProperUrl(API_BASE_URL, `/packages/${encodeURIComponent(packageName)}/download`);
+    try {
+      await fetch(url, { method: 'POST', cache: 'no-store' });
+    } catch {
+      // Non-fatal — don't block the user
+    }
+  }
+
   export async function getPackageByName(name: string): Promise<Package | null> {
     const url = ensureProperUrl(API_BASE_URL, `/packages/${encodeURIComponent(name)}`);
     try {
-      const res = await fetch(url, {
-        cache: 'no-store'
-      });
-      
+      const res = await fetchWithTimeout(url, { cache: 'no-store' });
+
       if (!res.ok) {
         if (res.status === 404) {
           return null; // Package not found

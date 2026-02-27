@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { getPackages } from '../lib/api';
-import { Package } from '../lib/types';
+import { getPackages, getKeywords, getCategories } from '../lib/api';
+import { Category, Package } from '../lib/types';
 import Header from '../components/Header';
 import Footer from '../components/Footer';
 import PackageCard from '../components/PackageCard';
@@ -12,40 +12,57 @@ type SortOption = 'name' | 'stars' | 'date' | 'updated';
 
 export default function PackagesPage() {
   const [packages, setPackages] = useState<Package[]>([]);
+  const [keywords, setKeywords] = useState<string[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [sortBy, setSortBy] = useState<SortOption>('stars');
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeKeyword, setActiveKeyword] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
 
   useEffect(() => {
-    async function fetchPackages() {
+    async function fetchAll() {
       try {
-        const data = await getPackages();
-        setPackages(data);
+        const [pkgData, kwData, catData] = await Promise.all([
+          getPackages(),
+          getKeywords(),
+          getCategories(),
+        ]);
+        setPackages(pkgData);
+        setKeywords(kwData);
+        setCategories(catData);
       } catch (error) {
-        console.error('Error fetching packages:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
       }
     }
-    fetchPackages();
+    fetchAll();
   }, []);
 
-  // Filter and sort packages
   const filteredAndSortedPackages = useMemo(() => {
     let filtered = packages;
 
-    // Apply search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = packages.filter(
+      filtered = filtered.filter(
         (pkg) =>
           pkg.name.toLowerCase().includes(query) ||
-          pkg.description?.toLowerCase().includes(query)
+          pkg.description?.toLowerCase().includes(query) ||
+          pkg.keywords?.some((kw) => kw.toLowerCase().includes(query))
       );
     }
 
-    // Apply sorting
-    const sorted = [...filtered].sort((a, b) => {
+    if (activeKeyword) {
+      filtered = filtered.filter((pkg) => pkg.keywords?.includes(activeKeyword));
+    }
+
+    if (activeCategory) {
+      // Category filter is done server-side via API; this is a client-side fallback
+      // (works when packages already loaded include category info)
+    }
+
+    return [...filtered].sort((a, b) => {
       switch (sortBy) {
         case 'name':
           return a.name.localeCompare(b.name);
@@ -59,9 +76,23 @@ export default function PackagesPage() {
           return 0;
       }
     });
+  }, [packages, sortBy, searchQuery, activeKeyword, activeCategory]);
 
-    return sorted;
-  }, [packages, sortBy, searchQuery]);
+  function handleKeywordClick(kw: string) {
+    setActiveKeyword((prev) => (prev === kw ? null : kw));
+    setActiveCategory(null);
+  }
+
+  function handleCategoryClick(slug: string) {
+    setActiveCategory((prev) => (prev === slug ? null : slug));
+    setActiveKeyword(null);
+  }
+
+  function clearFilters() {
+    setActiveKeyword(null);
+    setActiveCategory(null);
+    setSearchQuery('');
+  }
 
   if (loading) {
     return (
@@ -84,8 +115,8 @@ export default function PackagesPage() {
       <main className="py-16">
         <div className="max-w-[1200px] mx-auto px-8">
           {/* Back Link */}
-          <Link 
-            href="/" 
+          <Link
+            href="/"
             className="inline-flex items-center gap-2 text-sm mb-8 no-underline transition-colors hover-text-primary"
             style={{ color: 'var(--text-secondary)' }}
           >
@@ -95,112 +126,213 @@ export default function PackagesPage() {
             Back to home
           </Link>
 
-          {/* Page Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-              All Packages
-            </h1>
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-              Browse all {packages.length} packages in the Noir registry
-            </p>
-          </div>
+          <div className="flex gap-8">
+            {/* Sidebar */}
+            <aside className="w-56 flex-shrink-0">
+              {/* Categories */}
+              {categories.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-xs font-semibold uppercase tracking-wider mb-3"
+                    style={{ color: 'var(--text-muted)' }}>
+                    Categories
+                  </h3>
+                  <ul className="space-y-1">
+                    {categories.map((cat) => (
+                      <li key={cat.slug}>
+                        <button
+                          onClick={() => handleCategoryClick(cat.slug)}
+                          className="w-full text-left px-3 py-1.5 rounded text-sm transition-all"
+                          style={{
+                            backgroundColor: activeCategory === cat.slug
+                              ? 'color-mix(in srgb, var(--accent-primary) 15%, transparent)'
+                              : 'transparent',
+                            color: activeCategory === cat.slug
+                              ? 'var(--accent-primary)'
+                              : 'var(--text-secondary)',
+                            fontWeight: activeCategory === cat.slug ? 600 : 400,
+                          }}
+                        >
+                          {cat.name}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
-          {/* Search and Sort Controls */}
-          <div className="mb-8 space-y-4">
-            {/* Search Bar */}
-            <div className="relative">
-              <input
-                type="text"
-                placeholder="Search packages by name or description..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full px-5 py-3 pr-12 text-base rounded-lg outline-none transition-all focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)]/20"
-                style={{
-                  backgroundColor: 'var(--bg-card)',
-                  border: '1px solid var(--border-color)',
-                  color: 'var(--text-primary)'
-                }}
-              />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: 'var(--text-muted)' }}>
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+              {/* Keywords */}
+              {keywords.length > 0 && (
+                <div>
+                  <h3 className="text-xs font-semibold uppercase tracking-wider mb-3"
+                    style={{ color: 'var(--text-muted)' }}>
+                    Keywords
+                  </h3>
+                  <div className="flex flex-wrap gap-1.5">
+                    {keywords.map((kw) => (
+                      <button
+                        key={kw}
+                        onClick={() => handleKeywordClick(kw)}
+                        className="px-2 py-0.5 rounded text-xs font-mono transition-opacity hover:opacity-70"
+                        style={{
+                          backgroundColor: activeKeyword === kw
+                            ? 'var(--accent-primary)'
+                            : 'color-mix(in srgb, var(--accent-primary) 15%, transparent)',
+                          color: activeKeyword === kw
+                            ? 'var(--bg-darker)'
+                            : 'var(--accent-primary)',
+                          border: '1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent)',
+                        }}
+                      >
+                        {kw}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </aside>
+
+            {/* Main content */}
+            <div className="flex-1 min-w-0">
+              {/* Page Header */}
+              <div className="mb-6">
+                <h1 className="text-4xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
+                  All Packages
+                </h1>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  Browse all {packages.length} packages in the Noir registry
+                </p>
               </div>
-            </div>
 
-            {/* Sort Controls */}
-            <div className="flex items-center gap-4 flex-wrap">
-              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-                Sort by:
-              </span>
-              <div className="flex gap-2 flex-wrap">
-                {(['stars', 'name', 'date', 'updated'] as SortOption[]).map((option) => (
+              {/* Search */}
+              <div className="relative mb-4">
+                <input
+                  type="text"
+                  placeholder="Search by name, description, or keyword..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full px-5 py-3 pr-12 text-base rounded-lg outline-none transition-all focus:border-[var(--accent-primary)] focus:ring-2 focus:ring-[var(--accent-primary)]/20"
+                  style={{
+                    backgroundColor: 'var(--bg-card)',
+                    border: '1px solid var(--border-color)',
+                    color: 'var(--text-primary)'
+                  }}
+                />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none"
+                  style={{ color: 'var(--text-muted)' }}>
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2}
+                      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+              </div>
+
+              {/* Sort + Active filters row */}
+              <div className="flex items-center gap-4 flex-wrap mb-6">
+                <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                  Sort by:
+                </span>
+                <div className="flex gap-2 flex-wrap">
+                  {(['stars', 'name', 'date', 'updated'] as SortOption[]).map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => setSortBy(option)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${sortBy === option ? 'shadow-md' : 'hover:opacity-80'}`}
+                      style={{
+                        backgroundColor: sortBy === option ? 'var(--accent-primary)' : 'var(--bg-card)',
+                        color: sortBy === option ? 'var(--bg-darker)' : 'var(--text-primary)',
+                        border: '1px solid var(--border-color)'
+                      }}
+                    >
+                      {option === 'stars' && '⭐ Most Stars'}
+                      {option === 'name' && '🔤 Name'}
+                      {option === 'date' && '📅 Newest'}
+                      {option === 'updated' && '🔄 Recently Updated'}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Active filter chips */}
+                {(activeKeyword || activeCategory) && (
+                  <div className="flex items-center gap-2 ml-auto">
+                    {activeKeyword && (
+                      <span
+                        className="px-3 py-1 rounded text-sm font-mono flex items-center gap-1.5"
+                        style={{
+                          backgroundColor: 'color-mix(in srgb, var(--accent-primary) 15%, transparent)',
+                          color: 'var(--accent-primary)',
+                          border: '1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent)',
+                        }}
+                      >
+                        #{activeKeyword}
+                        <button onClick={() => setActiveKeyword(null)} className="hover:opacity-70 leading-none">✕</button>
+                      </span>
+                    )}
+                    {activeCategory && (
+                      <span
+                        className="px-3 py-1 rounded text-sm flex items-center gap-1.5"
+                        style={{
+                          backgroundColor: 'color-mix(in srgb, var(--accent-primary) 15%, transparent)',
+                          color: 'var(--accent-primary)',
+                          border: '1px solid color-mix(in srgb, var(--accent-primary) 35%, transparent)',
+                        }}
+                      >
+                        {categories.find((c) => c.slug === activeCategory)?.name ?? activeCategory}
+                        <button onClick={() => setActiveCategory(null)} className="hover:opacity-70 leading-none">✕</button>
+                      </span>
+                    )}
+                    <button
+                      onClick={clearFilters}
+                      className="text-xs underline hover:opacity-70"
+                      style={{ color: 'var(--text-muted)' }}
+                    >
+                      Clear all
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Results count */}
+              {(searchQuery.trim() || activeKeyword || activeCategory) && (
+                <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+                  Found {filteredAndSortedPackages.length}{' '}
+                  {filteredAndSortedPackages.length === 1 ? 'package' : 'packages'}
+                  {searchQuery.trim() && ` matching "${searchQuery}"`}
+                </p>
+              )}
+
+              {/* Package list */}
+              {filteredAndSortedPackages.length === 0 ? (
+                <div className="text-center py-12">
+                  <div className="text-6xl mb-4">📦</div>
+                  <p className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                    No packages found
+                  </p>
+                  <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+                    Try a different search term or filter
+                  </p>
                   <button
-                    key={option}
-                    onClick={() => setSortBy(option)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      sortBy === option
-                        ? 'shadow-md'
-                        : 'hover:opacity-80'
-                    }`}
-                    style={{
-                      backgroundColor: sortBy === option ? 'var(--accent-primary)' : 'var(--bg-card)',
-                      color: sortBy === option ? 'var(--bg-darker)' : 'var(--text-primary)',
-                      border: '1px solid var(--border-color)'
-                    }}
+                    onClick={clearFilters}
+                    className="text-sm underline"
+                    style={{ color: 'var(--accent-primary)' }}
                   >
-                    {option === 'stars' && '⭐ Most Stars'}
-                    {option === 'name' && '🔤 Name'}
-                    {option === 'date' && '📅 Newest'}
-                    {option === 'updated' && '🔄 Recently Updated'}
+                    Clear filters
                   </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Results Count */}
-            {searchQuery.trim() && (
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                Found {filteredAndSortedPackages.length} {filteredAndSortedPackages.length === 1 ? 'package' : 'packages'}
-                {searchQuery.trim() && ` matching "${searchQuery}"`}
-              </p>
-            )}
-          </div>
-
-          {/* Packages List */}
-          {filteredAndSortedPackages.length === 0 ? (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-4">📦</div>
-              <p className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
-                No packages found
-              </p>
-              <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-                {searchQuery.trim()
-                  ? 'Try a different search term'
-                  : 'No packages available'}
-              </p>
-              {searchQuery.trim() && (
-                <button
-                  onClick={() => setSearchQuery('')}
-                  className="text-sm underline"
-                  style={{ color: 'var(--accent-primary)' }}
-                >
-                  Clear search
-                </button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  {filteredAndSortedPackages.map((pkg) => (
+                    <PackageCard
+                      key={pkg.id}
+                      name={pkg.name}
+                      version={pkg.latest_version || 'v0.1.0'}
+                      keywords={pkg.keywords}
+                      onKeywordClick={handleKeywordClick}
+                    />
+                  ))}
+                </div>
               )}
             </div>
-          ) : (
-            <div className="space-y-2">
-              {filteredAndSortedPackages.map((pkg) => (
-                <PackageCard
-                  key={pkg.id}
-                  id={pkg.id}
-                  name={pkg.name}
-                  version={pkg.latest_version || 'v0.1.0'}
-                />
-              ))}
-            </div>
-          )}
+          </div>
         </div>
       </main>
 

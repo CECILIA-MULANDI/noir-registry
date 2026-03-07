@@ -18,6 +18,4 @@ RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/
 
 COPY --from=builder /app/target/release/noir-registry-server /usr/local/bin/noir-registry-server
 
-EXPOSE 3001
-
 CMD ["noir-registry-server"]

@@ -145,7 +145,7 @@ export default function DocsPage() {
                 </p>
                 <div className="bg-black rounded p-2 font-mono text-xs overflow-x-auto">
                   <code style={{ color: '#00ff00' }}>
-                    curl http://109.205.177.65/api/packages
+                    curl https://noir-registry-production-229a.up.railway.app/api/packages
                   </code>
                 </div>
               </div>
@@ -159,7 +159,7 @@ export default function DocsPage() {
                 </p>
                 <div className="bg-black rounded p-2 font-mono text-xs overflow-x-auto">
                   <code style={{ color: '#00ff00' }}>
-                    curl http://109.205.177.65/api/packages/package-name
+                    curl https://noir-registry-production-229a.up.railway.app/api/packages/package-name
                   </code>
                 </div>
               </div>
@@ -173,7 +173,7 @@ export default function DocsPage() {
                 </p>
                 <div className="bg-black rounded p-2 font-mono text-xs overflow-x-auto">
                   <code style={{ color: '#00ff00' }}>
-                    curl http://109.205.177.65/api/search?q=cryptography
+                    curl https://noir-registry-production-229a.up.railway.app/api/search?q=cryptography
                   </code>
                 </div>
               </div>

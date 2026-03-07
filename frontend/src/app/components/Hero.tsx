@@ -64,7 +64,7 @@ export default function Hero() {
                 </svg>
                 <span>Install Nargo</span>
               </Link>
-              <Link href="https://noir-lang.org/docs/getting_started" target="_blank" rel="noopener noreferrer" className="px-6 py-4 rounded-lg font-semibold no-underline transition-all inline-flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 hover-bg-accent" style={{ backgroundColor: 'var(--accent-primary)', color: 'var(--bg-darker)' }}>
+              <Link href="/docs" className="px-6 py-4 rounded-lg font-semibold no-underline transition-all inline-flex items-center gap-2 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 hover-bg-accent" style={{ backgroundColor: 'var(--accent-primary)', color: 'var(--bg-darker)' }}>
                 <span>Getting Started</span>
               </Link>
             </div>

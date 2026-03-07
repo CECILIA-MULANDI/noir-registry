@@ -1,20 +1,34 @@
 # Noir Package Registry
 
-A centralized package registry for the Noir programming language ecosystem. Discover, search, and manage Noir packages through our web interface, REST API, or CLI tool.
+A centralized package registry for the Noir programming language ecosystem. Discover, search, and manage Noir packages through the web interface, REST API, or CLI tool.
+
+## Live
+
+| Service | URL |
+|---------|-----|
+| Web Interface | https://noir-registry.vercel.app |
+| API | https://noir-registry-production-229a.up.railway.app |
 
 ## Quick Start
+
+**Browse packages:**
+
+Visit the [web interface](https://noir-registry.vercel.app) to explore, search, and filter packages by category.
 
 **Using the API:**
 
 ```bash
 # List all packages
-curl http://109.205.177.65/api/packages
+curl https://noir-registry-production-229a.up.railway.app/api/packages
 
 # Search packages
-curl "http://109.205.177.65/api/search?q=cryptography"
+curl "https://noir-registry-production-229a.up.railway.app/api/search?q=cryptography"
 
-# Get specific package
-curl http://109.205.177.65/api/packages/CodeTracer
+# Get a specific package
+curl https://noir-registry-production-229a.up.railway.app/api/packages/package-name
+
+# List categories
+curl https://noir-registry-production-229a.up.railway.app/api/categories
 ```
 
 **Using the CLI tool:**
@@ -23,83 +37,108 @@ curl http://109.205.177.65/api/packages/CodeTracer
 # Install
 cargo install nargo-add
 
-# Use in your Noir project
+# Add a package to your Noir project
 cd your-noir-project
 nargo add package-name
+
+# Remove a package
 nargo remove package-name
 ```
 
-## Live Services
+## API Reference
 
-### Web Interface
+**Base URL:** `https://noir-registry-production-229a.up.railway.app`
 
-**Frontend:** [https://noir-registry.vercel.app/](https://noir-registry.vercel.app/)
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/health` | Health check |
+| GET | `/api/packages` | List all packages |
+| GET | `/api/packages/:name` | Get package by name |
+| GET | `/api/packages?category=slug` | Filter by category |
+| GET | `/api/packages?keyword=kw` | Filter by keyword |
+| GET | `/api/search?q=query` | Search by name, description, or keyword |
+| GET | `/api/categories` | List all categories |
+| GET | `/api/keywords` | List all keywords |
 
-Browse packages, search, and explore the Noir package ecosystem through the web interface.
+## Categories
 
-### API Server
+Packages are organized into 7 categories:
 
-**Base URL:** `http://109.205.177.65`
-
-**Available Endpoints:**
-
-- `GET /health` - Health check
-- `GET /api/packages` - List all packages
-- `GET /api/packages/:name` - Get package by name
-- `GET /api/search?q=query` - Search packages
-
-**Try it:**
-
-```bash
-curl http://109.205.177.65/health
-curl http://109.205.177.65/api/packages | head -20
-curl "http://109.205.177.65/api/search?q=cryptography"
-```
+- **Cryptography** — Hashing, encryption, signatures, and crypto primitives
+- **Data Structures** — Trees, arrays, sets, and other data structures
+- **Math** — Mathematical operations, number theory, and field arithmetic
+- **Utilities** — General-purpose helper libraries and tools
+- **Zero Knowledge** — ZK proof helpers, verifiers, and proof-system utilities
+- **Circuits** — Reusable circuit components and gadgets
+- **Standards** — Implementations of standards (EIP, BIP, RFC, etc.)
 
 ## CLI Tool
 
-Install the CLI tool to easily manage packages in your Noir projects:
+Install the CLI to manage packages directly in your Noir projects:
 
 ```bash
 cargo install nargo-add
 ```
 
-**Usage:**
+**Commands:**
 
 ```bash
-cd your-noir-project
+# Add a package (updates Nargo.toml automatically)
 nargo add package-name
+
+# Remove a package
 nargo remove package-name
+
+# Remove multiple packages
+nargo remove pkg-one pkg-two
+
+# Remove and clean cached source files
+nargo remove package-name --clean
 ```
 
-- `nargo add` fetches package info from the registry and adds it to your `Nargo.toml`.
-- `nargo remove` removes a dependency from your `Nargo.toml`. Supports removing multiple packages at once: `nargo remove pkg1 pkg2`.
+See [cli-tool/README.md](cli-tool/README.md) for full CLI documentation.
 
-After installation, you can use `nargo add` and `nargo remove` directly - they work seamlessly with your existing `nargo` installation. See [cli-tool/README.md](cli-tool/README.md) for more details.
+## Local Development
 
-## Frontend Web Interface
+**Requirements:** Rust, Node.js, PostgreSQL (or a Supabase project)
 
-The frontend is built with Next.js and deployed at **[https://noir-registry.vercel.app/](https://noir-registry.vercel.app/)**.
+**Backend:**
 
-**Features:**
+```bash
+cd server
+cp .env.example .env   # fill in DATABASE_URL and GITHUB_TOKEN
+cargo run
+# Runs on http://localhost:3001
+```
 
-- Browse all packages
-- Search functionality
-- Package detail pages
-- Responsive design with Tailwind CSS
+**Frontend:**
 
-Visit the [web interface](https://noir-registry.vercel.app/) to explore packages visually.
+```bash
+cd frontend
+npm install
+npm run dev
+# Runs on http://localhost:3000
+```
 
-## Statistics
+Both must run simultaneously. The frontend proxies `/api/*` to the backend automatically.
 
-- **99 packages** indexed and available
-- **Web interface** live at [https://noir-registry.vercel.app/](https://noir-registry.vercel.app/)
-- **API** live at `http://109.205.177.65`
-- **CLI tool** available: `cargo install nargo-add`
+**Run migrations:**
+
+```bash
+cd server
+sqlx migrate run
+```
+
+## Tech Stack
+
+- **Backend:** Rust + Axum + SQLx + PostgreSQL
+- **Frontend:** Next.js 16 + Tailwind CSS
+- **Database:** Supabase (PostgreSQL) with `pg_trgm` indexes for fast search
+- **Hosting:** Railway (backend) + Vercel (frontend)
 
 ## Resources
 
-- [Noir Language Documentation](https://noir-lang.org/)
+- [Noir Language Documentation](https://noir-lang.org/docs)
 - [awesome-noir Repository](https://github.com/noir-lang/awesome-noir)
 
 ## Contributing

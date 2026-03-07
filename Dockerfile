@@ -18,4 +18,7 @@ RUN apt-get update && apt-get install -y libssl3 ca-certificates && rm -rf /var/
 
 COPY --from=builder /app/target/release/noir-registry-server /usr/local/bin/noir-registry-server
 
+ENV PORT=8080
+EXPOSE 8080
+
 CMD ["noir-registry-server"]

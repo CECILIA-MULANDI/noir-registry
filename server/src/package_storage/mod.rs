@@ -188,7 +188,12 @@ pub async fn search_packages(pool: &sqlx::PgPool, query: &str) -> Result<Vec<Pac
             r#"SELECT DISTINCT
                 p.id, p.name, p.description, p.github_repository_url, p.homepage, p.license,
                 p.owner_github_username, p.owner_avatar_url, p.total_downloads, p.github_stars,
-                p.latest_version, p.created_at, p.updated_at
+                p.latest_version, p.created_at, p.updated_at,
+                CASE
+                    WHEN p.name ILIKE '{prefix}' THEN 1
+                    WHEN p.description ILIKE '{prefix}' THEN 2
+                    ELSE 3
+                END AS relevance
             FROM packages p
             LEFT JOIN package_keywords pk ON p.id = pk.package_id
             WHERE
@@ -196,11 +201,7 @@ pub async fn search_packages(pool: &sqlx::PgPool, query: &str) -> Result<Vec<Pac
                 OR p.description ILIKE '{pat}'
                 OR pk.keyword ILIKE '{pat}'
             ORDER BY
-                CASE
-                    WHEN p.name ILIKE '{prefix}' THEN 1
-                    WHEN p.description ILIKE '{prefix}' THEN 2
-                    ELSE 3
-                END,
+                relevance,
                 p.github_stars DESC,
                 p.name ASC"#,
             pat = search_pattern,

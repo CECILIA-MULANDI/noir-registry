@@ -1,4 +1,8 @@
+[build]
+buildCommand = "cargo build --release --package noir-registry-server"
+
 [deploy]
+startCommand = "./target/release/noir-registry-server"
 healthcheckPath = "/health"
 healthcheckTimeout = 30
 restartPolicyType = "on_failure"

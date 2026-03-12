@@ -22,7 +22,7 @@ cargo install --git https://github.com/CECILIA-MULANDI/noir-registry --bin nargo
 
 ### Configure Registry URL (Optional)
 
-The tool defaults to `http://109.205.177.65/api`. To use a different registry:
+The tool defaults to `https://noir-registry-production-229a.up.railway.app/api`. To use a different registry:
 
 ```bash
 # Set environment variable (in your ~/.bashrc or ~/.zshrc)
@@ -126,12 +126,12 @@ cat Nargo.toml
 
 ### Environment Variables
 
-- `NOIR_REGISTRY_URL` - Default registry API URL (defaults to `http://109.205.177.65/api`)
+- `NOIR_REGISTRY_URL` - Default registry API URL (defaults to `https://noir-registry-production-229a.up.railway.app/api`)
 
 Example:
 
 ```bash
-export NOIR_REGISTRY_URL="http://109.205.177.65/api"
+export NOIR_REGISTRY_URL="https://noir-registry-production-229a.up.railway.app/api"
 nargo add rocq-of-noir
 ```
 

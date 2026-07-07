@@ -6,6 +6,12 @@ target/
 node_modules/
 .next/
 
-# Ignore all .md files except README.md
+# Python (research harvest)
+.venv/
+__pycache__/
+*.pyc
+
+# Ignore all .md files except README.md and the v2 schema doc
 *.md
 !README.md
+!research/schema_v2.md

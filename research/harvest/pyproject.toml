@@ -1,0 +1,12 @@
+[project]
+name = "noir-registry-harvest"
+version = "0.1.0"
+description = "Harvests real dev queries about Noir libraries from GitHub Discussions, GitHub issues, and the Aztec forum. Evidence for the registry schema redesign."
+requires-python = ">=3.11"
+dependencies = [
+    "httpx>=0.27",
+    "python-dotenv>=1.0",
+]
+
+[tool.uv]
+package = false

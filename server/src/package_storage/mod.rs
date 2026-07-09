@@ -53,11 +53,16 @@ async fn fetch_keywords_map(
 
 /// Inserts an enriched package into the database
 pub async fn insert_package(pool: &sqlx::PgPool, pkg: &EnrichedPackage) -> Result<()> {
+    let last_commit = match &pkg.last_commit_at {
+        Some(dt) => format!("'{}'", dt.to_rfc3339()),
+        None => "NULL".to_string(),
+    };
     let sql = format!(
         r#"INSERT INTO packages (
             name, description, github_repository_url, homepage, license,
-            owner_github_username, owner_avatar_url, github_stars, total_downloads
-        ) VALUES ('{}', '{}', '{}', {}, {}, '{}', '{}', {}, 0)
+            owner_github_username, owner_avatar_url, github_stars, total_downloads,
+            last_commit_at
+        ) VALUES ('{}', '{}', '{}', {}, {}, '{}', '{}', {}, 0, {})
         ON CONFLICT (name) DO UPDATE SET
             description = EXCLUDED.description,
             github_repository_url = EXCLUDED.github_repository_url,
@@ -66,6 +71,7 @@ pub async fn insert_package(pool: &sqlx::PgPool, pkg: &EnrichedPackage) -> Resul
             owner_github_username = EXCLUDED.owner_github_username,
             owner_avatar_url = EXCLUDED.owner_avatar_url,
             github_stars = EXCLUDED.github_stars,
+            last_commit_at = EXCLUDED.last_commit_at,
             updated_at = CURRENT_TIMESTAMP"#,
         escape_sql_string(&pkg.name),
         escape_sql_string(&pkg.description),
@@ -75,6 +81,7 @@ pub async fn insert_package(pool: &sqlx::PgPool, pkg: &EnrichedPackage) -> Resul
         escape_sql_string(&pkg.owner_username),
         escape_sql_string(&pkg.owner_avatar),
         pkg.stars,
+        last_commit,
     );
     sqlx::raw_sql(&sql).execute(pool).await?;
     Ok(())
@@ -87,7 +94,8 @@ pub async fn get_all_packages(pool: &sqlx::PgPool) -> Result<Vec<PackageResponse
             r#"SELECT
                 id, name, description, github_repository_url, homepage, license,
                 owner_github_username, owner_avatar_url, total_downloads, github_stars,
-                latest_version, created_at, updated_at
+                latest_version, created_at, updated_at,
+                last_commit_at, comparison_notes
             FROM packages
             ORDER BY github_stars DESC, name ASC"#,
         )
@@ -111,6 +119,8 @@ pub async fn get_all_packages(pool: &sqlx::PgPool) -> Result<Vec<PackageResponse
                     latest_version: row.try_get("latest_version")?,
                     created_at: row.try_get("created_at")?,
                     updated_at: row.try_get("updated_at")?,
+                    last_commit_at: row.try_get("last_commit_at")?,
+                    comparison_notes: row.try_get("comparison_notes")?,
                     keywords: vec![],
                 })
             })
@@ -142,7 +152,8 @@ pub async fn get_package_by_name(
             r#"SELECT
                 id, name, description, github_repository_url, homepage, license,
                 owner_github_username, owner_avatar_url, total_downloads, github_stars,
-                latest_version, created_at, updated_at
+                latest_version, created_at, updated_at,
+                last_commit_at, comparison_notes
             FROM packages WHERE name = '{}'"#,
             escaped_name
         );
@@ -165,6 +176,8 @@ pub async fn get_package_by_name(
                     latest_version: row.try_get("latest_version")?,
                     created_at: row.try_get("created_at")?,
                     updated_at: row.try_get("updated_at")?,
+                    last_commit_at: row.try_get("last_commit_at")?,
+                    comparison_notes: row.try_get("comparison_notes")?,
                     keywords: vec![],
                 };
                 let mut map = fetch_keywords_map(pool, &[pkg.id]).await?;
@@ -189,6 +202,7 @@ pub async fn search_packages(pool: &sqlx::PgPool, query: &str) -> Result<Vec<Pac
                 p.id, p.name, p.description, p.github_repository_url, p.homepage, p.license,
                 p.owner_github_username, p.owner_avatar_url, p.total_downloads, p.github_stars,
                 p.latest_version, p.created_at, p.updated_at,
+                p.last_commit_at, p.comparison_notes,
                 CASE
                     WHEN p.name ILIKE '{prefix}' THEN 1
                     WHEN p.description ILIKE '{prefix}' THEN 2
@@ -227,6 +241,8 @@ pub async fn search_packages(pool: &sqlx::PgPool, query: &str) -> Result<Vec<Pac
                     latest_version: row.try_get("latest_version")?,
                     created_at: row.try_get("created_at")?,
                     updated_at: row.try_get("updated_at")?,
+                    last_commit_at: row.try_get("last_commit_at")?,
+                    comparison_notes: row.try_get("comparison_notes")?,
                     keywords: vec![],
                 })
             })
@@ -258,7 +274,8 @@ pub async fn get_packages_by_keyword(
             p.id, p.name, p.description, p.github_repository_url,
             p.homepage, p.license, p.owner_github_username, p.owner_avatar_url,
             p.total_downloads, p.github_stars, p.latest_version,
-            p.created_at, p.updated_at
+            p.created_at, p.updated_at,
+            p.last_commit_at, p.comparison_notes
         FROM packages p
         INNER JOIN package_keywords pk ON p.id = pk.package_id
         WHERE pk.keyword = '{}'
@@ -285,6 +302,8 @@ pub async fn get_packages_by_keyword(
                 latest_version: row.try_get("latest_version")?,
                 created_at: row.try_get("created_at")?,
                 updated_at: row.try_get("updated_at")?,
+                last_commit_at: row.try_get("last_commit_at")?,
+                comparison_notes: row.try_get("comparison_notes")?,
                 keywords: vec![],
             })
         })
@@ -395,7 +414,8 @@ pub async fn get_packages_by_category(
             p.id, p.name, p.description, p.github_repository_url,
             p.homepage, p.license, p.owner_github_username, p.owner_avatar_url,
             p.total_downloads, p.github_stars, p.latest_version,
-            p.created_at, p.updated_at
+            p.created_at, p.updated_at,
+            p.last_commit_at, p.comparison_notes
         FROM packages p
         INNER JOIN package_categories pc ON p.id = pc.package_id
         INNER JOIN categories c ON pc.category_id = c.id
@@ -423,6 +443,8 @@ pub async fn get_packages_by_category(
                 latest_version: row.try_get("latest_version")?,
                 created_at: row.try_get("created_at")?,
                 updated_at: row.try_get("updated_at")?,
+                last_commit_at: row.try_get("last_commit_at")?,
+                comparison_notes: row.try_get("comparison_notes")?,
                 keywords: vec![],
             })
         })

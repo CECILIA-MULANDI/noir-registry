@@ -58,5 +58,6 @@ pub async fn enrich_package(
         stars: github_data.stargazers_count,
         license: github_data.license.map(|l| l.spdx_id),
         homepage: github_data.homepage,
+        last_commit_at: github_data.pushed_at,
     })
 }

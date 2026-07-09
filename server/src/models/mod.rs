@@ -32,6 +32,8 @@ pub struct PackageResponse {
     pub latest_version: Option<String>,
     pub created_at: Option<chrono::DateTime<chrono::Utc>>,
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub last_commit_at: Option<chrono::DateTime<chrono::Utc>>,
+    pub comparison_notes: Option<String>,
     pub keywords: Vec<String>,
 }
 /// GitHub API response for repository info
@@ -41,6 +43,7 @@ pub struct GitHubRepo {
     pub stargazers_count: i32,
     pub license: Option<GitHubLicense>,
     pub homepage: Option<String>,
+    pub pushed_at: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -64,4 +67,5 @@ pub struct EnrichedPackage {
     pub stars: i32,
     pub license: Option<String>,
     pub homepage: Option<String>,
+    pub last_commit_at: Option<chrono::DateTime<chrono::Utc>>,
 }

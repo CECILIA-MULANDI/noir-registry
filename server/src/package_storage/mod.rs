@@ -95,7 +95,10 @@ pub async fn get_all_packages(pool: &sqlx::PgPool) -> Result<Vec<PackageResponse
                 id, name, description, github_repository_url, homepage, license,
                 owner_github_username, owner_avatar_url, total_downloads, github_stars,
                 latest_version, created_at, updated_at,
-                last_commit_at, comparison_notes
+                last_commit_at, comparison_notes,
+                (SELECT nargo_version FROM package_compat_results
+                 WHERE package_id = packages.id AND status = 'ok'
+                 ORDER BY nargo_version DESC LIMIT 1) AS max_compatible_nargo_version
             FROM packages
             ORDER BY github_stars DESC, name ASC"#,
         )
@@ -121,6 +124,7 @@ pub async fn get_all_packages(pool: &sqlx::PgPool) -> Result<Vec<PackageResponse
                     updated_at: row.try_get("updated_at")?,
                     last_commit_at: row.try_get("last_commit_at")?,
                     comparison_notes: row.try_get("comparison_notes")?,
+                    max_compatible_nargo_version: row.try_get("max_compatible_nargo_version")?,
                     keywords: vec![],
                 })
             })
@@ -153,7 +157,10 @@ pub async fn get_package_by_name(
                 id, name, description, github_repository_url, homepage, license,
                 owner_github_username, owner_avatar_url, total_downloads, github_stars,
                 latest_version, created_at, updated_at,
-                last_commit_at, comparison_notes
+                last_commit_at, comparison_notes,
+                (SELECT nargo_version FROM package_compat_results
+                 WHERE package_id = packages.id AND status = 'ok'
+                 ORDER BY nargo_version DESC LIMIT 1) AS max_compatible_nargo_version
             FROM packages WHERE name = '{}'"#,
             escaped_name
         );
@@ -178,6 +185,7 @@ pub async fn get_package_by_name(
                     updated_at: row.try_get("updated_at")?,
                     last_commit_at: row.try_get("last_commit_at")?,
                     comparison_notes: row.try_get("comparison_notes")?,
+                    max_compatible_nargo_version: row.try_get("max_compatible_nargo_version")?,
                     keywords: vec![],
                 };
                 let mut map = fetch_keywords_map(pool, &[pkg.id]).await?;
@@ -203,6 +211,9 @@ pub async fn search_packages(pool: &sqlx::PgPool, query: &str) -> Result<Vec<Pac
                 p.owner_github_username, p.owner_avatar_url, p.total_downloads, p.github_stars,
                 p.latest_version, p.created_at, p.updated_at,
                 p.last_commit_at, p.comparison_notes,
+                (SELECT nargo_version FROM package_compat_results
+                 WHERE package_id = p.id AND status = 'ok'
+                 ORDER BY nargo_version DESC LIMIT 1) AS max_compatible_nargo_version,
                 CASE
                     WHEN p.name ILIKE '{prefix}' THEN 1
                     WHEN p.description ILIKE '{prefix}' THEN 2
@@ -243,6 +254,7 @@ pub async fn search_packages(pool: &sqlx::PgPool, query: &str) -> Result<Vec<Pac
                     updated_at: row.try_get("updated_at")?,
                     last_commit_at: row.try_get("last_commit_at")?,
                     comparison_notes: row.try_get("comparison_notes")?,
+                    max_compatible_nargo_version: row.try_get("max_compatible_nargo_version")?,
                     keywords: vec![],
                 })
             })
@@ -275,7 +287,10 @@ pub async fn get_packages_by_keyword(
             p.homepage, p.license, p.owner_github_username, p.owner_avatar_url,
             p.total_downloads, p.github_stars, p.latest_version,
             p.created_at, p.updated_at,
-            p.last_commit_at, p.comparison_notes
+            p.last_commit_at, p.comparison_notes,
+            (SELECT nargo_version FROM package_compat_results
+             WHERE package_id = p.id AND status = 'ok'
+             ORDER BY nargo_version DESC LIMIT 1) AS max_compatible_nargo_version
         FROM packages p
         INNER JOIN package_keywords pk ON p.id = pk.package_id
         WHERE pk.keyword = '{}'
@@ -304,6 +319,7 @@ pub async fn get_packages_by_keyword(
                 updated_at: row.try_get("updated_at")?,
                 last_commit_at: row.try_get("last_commit_at")?,
                 comparison_notes: row.try_get("comparison_notes")?,
+                max_compatible_nargo_version: row.try_get("max_compatible_nargo_version")?,
                 keywords: vec![],
             })
         })
@@ -415,7 +431,10 @@ pub async fn get_packages_by_category(
             p.homepage, p.license, p.owner_github_username, p.owner_avatar_url,
             p.total_downloads, p.github_stars, p.latest_version,
             p.created_at, p.updated_at,
-            p.last_commit_at, p.comparison_notes
+            p.last_commit_at, p.comparison_notes,
+            (SELECT nargo_version FROM package_compat_results
+             WHERE package_id = p.id AND status = 'ok'
+             ORDER BY nargo_version DESC LIMIT 1) AS max_compatible_nargo_version
         FROM packages p
         INNER JOIN package_categories pc ON p.id = pc.package_id
         INNER JOIN categories c ON pc.category_id = c.id
@@ -445,6 +464,7 @@ pub async fn get_packages_by_category(
                 updated_at: row.try_get("updated_at")?,
                 last_commit_at: row.try_get("last_commit_at")?,
                 comparison_notes: row.try_get("comparison_notes")?,
+                max_compatible_nargo_version: row.try_get("max_compatible_nargo_version")?,
                 keywords: vec![],
             })
         })

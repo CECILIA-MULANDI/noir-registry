@@ -34,6 +34,7 @@ pub struct PackageResponse {
     pub updated_at: Option<chrono::DateTime<chrono::Utc>>,
     pub last_commit_at: Option<chrono::DateTime<chrono::Utc>>,
     pub comparison_notes: Option<String>,
+    pub max_compatible_nargo_version: Option<String>,
     pub keywords: Vec<String>,
 }
 /// GitHub API response for repository info

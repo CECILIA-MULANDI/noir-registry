@@ -140,13 +140,13 @@ export default function DocsPage() {
                 To publish a package, you need an API key tied to your GitHub account. The registry verifies that you own the GitHub repository before publishing.
               </p>
 
-              <h3 className="text-lg font-semibold mt-6" style={{ color: 'var(--text-primary)' }}>Step 1:Get an API key</h3>
+              <h3 className="text-lg font-semibold mt-6" style={{ color: 'var(--text-primary)' }}>Step 1: Get an API key</h3>
               <p style={{ color: 'var(--text-secondary)' }}>
                 Authenticate with your GitHub account to receive an API key:
               </p>
               <div className="bg-black rounded-lg p-4 font-mono text-sm overflow-x-auto">
                 <code style={{ color: '#00ff00' }}>
-                  {`curl -X POST https://noir-registry-production-229a.up.railway.app/api/auth/github \\
+                  {`curl -X POST https://noir-registry.fly.dev/api/auth/github \\
   -H "Content-Type: application/json" \\
   -d '{"github_token": "your_github_personal_access_token"}'`}
                 </code>
@@ -155,13 +155,13 @@ export default function DocsPage() {
                 The response will include your <code className="px-1 py-0.5 rounded font-mono text-xs" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}>api_key</code>. Keep it safe.
               </p>
 
-              <h3 className="text-lg font-semibold mt-6" style={{ color: 'var(--text-primary)' }}>Step 2:Publish your package</h3>
+              <h3 className="text-lg font-semibold mt-6" style={{ color: 'var(--text-primary)' }}>Step 2: Publish your package</h3>
               <p style={{ color: 'var(--text-secondary)' }}>
                 Send a POST request with your package details:
               </p>
               <div className="bg-black rounded-lg p-4 font-mono text-sm overflow-x-auto">
                 <code style={{ color: '#00ff00' }}>
-                  {`curl -X POST https://noir-registry-production-229a.up.railway.app/api/packages/publish \\
+                  {`curl -X POST https://noir-registry.fly.dev/api/packages/publish \\
   -H "Authorization: Bearer YOUR_API_KEY" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -212,7 +212,7 @@ export default function DocsPage() {
                 </p>
                 <div className="bg-black rounded p-2 font-mono text-xs overflow-x-auto">
                   <code style={{ color: '#00ff00' }}>
-                    curl https://noir-registry-production-229a.up.railway.app/api/packages
+                    curl https://noir-registry.fly.dev/api/packages
                   </code>
                 </div>
               </div>
@@ -226,7 +226,7 @@ export default function DocsPage() {
                 </p>
                 <div className="bg-black rounded p-2 font-mono text-xs overflow-x-auto">
                   <code style={{ color: '#00ff00' }}>
-                    curl https://noir-registry-production-229a.up.railway.app/api/packages/package-name
+                    curl https://noir-registry.fly.dev/api/packages/package-name
                   </code>
                 </div>
               </div>
@@ -240,7 +240,7 @@ export default function DocsPage() {
                 </p>
                 <div className="bg-black rounded p-2 font-mono text-xs overflow-x-auto">
                   <code style={{ color: '#00ff00' }}>
-                    curl https://noir-registry-production-229a.up.railway.app/api/search?q=cryptography
+                    curl https://noir-registry.fly.dev/api/search?q=cryptography
                   </code>
                 </div>
               </div>

@@ -7,28 +7,25 @@ A centralized package registry for the Noir programming language ecosystem. Disc
 | Service | URL |
 |---------|-----|
 | Web Interface | https://noir-registry.vercel.app |
-| API | https://noir-registry-production-229a.up.railway.app |
+| API | https://noir-registry.fly.dev |
 
 ## Quick Start
 
 **Browse packages:**
 
-Visit the [web interface](https://noir-registry.vercel.app) to explore, search, and filter packages by category.
+Visit the [web interface](https://noir-registry.vercel.app) to explore and search packages.
 
 **Using the API:**
 
 ```bash
 # List all packages
-curl https://noir-registry-production-229a.up.railway.app/api/packages
+curl https://noir-registry.fly.dev/api/packages
 
 # Search packages
-curl "https://noir-registry-production-229a.up.railway.app/api/search?q=cryptography"
+curl "https://noir-registry.fly.dev/api/search?q=cryptography"
 
 # Get a specific package
-curl https://noir-registry-production-229a.up.railway.app/api/packages/package-name
-
-# List categories
-curl https://noir-registry-production-229a.up.railway.app/api/categories
+curl https://noir-registry.fly.dev/api/packages/package-name
 ```
 
 **Using the CLI tool:**
@@ -47,30 +44,16 @@ nargo remove package-name
 
 ## API Reference
 
-**Base URL:** `https://noir-registry-production-229a.up.railway.app`
+**Base URL:** `https://noir-registry.fly.dev`
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/health` | Health check |
 | GET | `/api/packages` | List all packages |
 | GET | `/api/packages/:name` | Get package by name |
-| GET | `/api/packages?category=slug` | Filter by category |
 | GET | `/api/packages?keyword=kw` | Filter by keyword |
 | GET | `/api/search?q=query` | Search by name, description, or keyword |
-| GET | `/api/categories` | List all categories |
 | GET | `/api/keywords` | List all keywords |
-
-## Categories
-
-Packages are organized into 7 categories:
-
-- **Cryptography** — Hashing, encryption, signatures, and crypto primitives
-- **Data Structures** — Trees, arrays, sets, and other data structures
-- **Math** — Mathematical operations, number theory, and field arithmetic
-- **Utilities** — General-purpose helper libraries and tools
-- **Zero Knowledge** — ZK proof helpers, verifiers, and proof-system utilities
-- **Circuits** — Reusable circuit components and gadgets
-- **Standards** — Implementations of standards (EIP, BIP, RFC, etc.)
 
 ## CLI Tool
 
@@ -134,7 +117,7 @@ sqlx migrate run
 - **Backend:** Rust + Axum + SQLx + PostgreSQL
 - **Frontend:** Next.js 16 + Tailwind CSS
 - **Database:** Supabase (PostgreSQL) with `pg_trgm` indexes for fast search
-- **Hosting:** Railway (backend) + Vercel (frontend)
+- **Hosting:** Fly.io (backend) + Vercel (frontend)
 
 ## Resources
 

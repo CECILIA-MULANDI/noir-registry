@@ -1,0 +1,35 @@
+# Rust build artifacts (largest offender by far)
+target/
+**/target/
+
+# Secrets
+.env
+.env.*
+**/.env
+**/.env.*
+
+# Version control
+.git/
+.gitignore
+
+# Frontend and its deps (not part of the backend image)
+frontend/
+node_modules/
+**/node_modules/
+
+# Research scripts and their venvs
+research/
+testing_project/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+
+# Old deploy configs
+railway.toml
+
+# Docs
+README.md
+**/README.md
+*.md

@@ -35,10 +35,6 @@ pub fn generate_api_key() -> String {
         .collect()
 }
 
-fn escape_sql(s: &str) -> String {
-    s.replace('\'', "''")
-}
-
 fn row_to_user(row: sqlx::postgres::PgRow) -> Result<User, sqlx::Error> {
     Ok(User {
         id: row.try_get("id")?,
@@ -64,28 +60,32 @@ pub async fn get_or_create_user_from_github(pool: &PgPool, github_token: &str) -
         .json()
         .await?;
 
-    // github_id is i32 — safe to format directly without quoting
-    let find_sql = format!(
+    // .persistent(false) uses unnamed prepared statements, which pgbouncer transaction mode tolerates.
+    let row = sqlx::query(
         "SELECT id, github_id, github_username, github_avatar_url, api_key, created_at, updated_at
-         FROM users WHERE github_id = {}",
-        github_user.id
-    );
-    let row = sqlx::raw_sql(&find_sql).fetch_all(pool).await?.into_iter().next();
+         FROM users WHERE github_id = $1",
+    )
+    .bind(github_user.id)
+    .persistent(false)
+    .fetch_optional(pool)
+    .await?;
 
     match row {
         Some(r) => Ok(row_to_user(r)?),
         None => {
             let api_key = generate_api_key();
-            let insert_sql = format!(
+            let row = sqlx::query(
                 "INSERT INTO users (github_id, github_username, github_avatar_url, api_key)
-                 VALUES ({}, '{}', '{}', '{}')
+                 VALUES ($1, $2, $3, $4)
                  RETURNING id, github_id, github_username, github_avatar_url, api_key, created_at, updated_at",
-                github_user.id,
-                escape_sql(&github_user.login),
-                escape_sql(&github_user.avatar_url),
-                escape_sql(&api_key),
-            );
-            let row = sqlx::raw_sql(&insert_sql).fetch_one(pool).await?;
+            )
+            .bind(github_user.id)
+            .bind(&github_user.login)
+            .bind(&github_user.avatar_url)
+            .bind(&api_key)
+            .persistent(false)
+            .fetch_one(pool)
+            .await?;
             Ok(row_to_user(row)?)
         }
     }
@@ -93,12 +93,14 @@ pub async fn get_or_create_user_from_github(pool: &PgPool, github_token: &str) -
 
 /// Validate an API key and return the associated user
 pub async fn validate_api_key(pool: &PgPool, api_key: &str) -> Result<Option<User>> {
-    let sql = format!(
+    let row = sqlx::query(
         "SELECT id, github_id, github_username, github_avatar_url, api_key, created_at, updated_at
-         FROM users WHERE api_key = '{}'",
-        escape_sql(api_key)
-    );
-    let row = sqlx::raw_sql(&sql).fetch_all(pool).await?.into_iter().next();
+         FROM users WHERE api_key = $1",
+    )
+    .bind(api_key)
+    .persistent(false)
+    .fetch_optional(pool)
+    .await?;
 
     match row {
         Some(r) => Ok(Some(row_to_user(r)?)),

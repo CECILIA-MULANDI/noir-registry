@@ -1,5 +1,5 @@
 use crate::auth;
-use crate::models::{Category, PackageResponse};
+use crate::models::PackageResponse;
 use crate::package_storage;
 use anyhow::Result;
 use axum::body::Body;
@@ -20,11 +20,10 @@ pub struct AppState {
     pub db: PgPool,
 }
 
-/// Query parameters for /api/packages (optional keyword / category filter)
+/// Query parameters for /api/packages (optional keyword filter)
 #[derive(Deserialize)]
 pub struct ListPackagesQuery {
     pub keyword: Option<String>,
-    pub category: Option<String>,
 }
 
 /// Query parameters for /api/search
@@ -42,7 +41,6 @@ pub struct PublishRequest {
     pub license: Option<String>,
     pub homepage: Option<String>,
     pub keywords: Option<Vec<String>>,
-    pub category: Option<String>,
 }
 
 #[derive(Debug, Serialize)]
@@ -103,20 +101,17 @@ pub fn create_router(db: PgPool) -> Router {
         .route("/api/packages/:name/download", post(record_download))
         .route("/api/auth/github", post(github_auth))
         .route("/api/keywords", get(get_keywords))
-        .route("/api/categories", get(get_categories))
         .layer(cors)
         .with_state(state)
 }
 
-/// GET /api/packages — list all packages, optionally filtered by keyword or category
+/// GET /api/packages: list all packages, optionally filtered by keyword
 async fn list_packages(
     State(state): State<Arc<AppState>>,
     Query(params): Query<ListPackagesQuery>,
 ) -> Result<Json<Vec<PackageResponse>>, Response> {
     let result = if let Some(keyword) = params.keyword {
         package_storage::get_packages_by_keyword(&state.db, &keyword).await
-    } else if let Some(category) = params.category {
-        package_storage::get_packages_by_category(&state.db, &category).await
     } else {
         package_storage::get_all_packages(&state.db).await
     };
@@ -143,7 +138,7 @@ async fn list_packages(
     }
 }
 
-/// GET /api/packages/:name — get a single package by name
+/// GET /api/packages/:name:get a single package by name
 async fn get_package(
     State(state): State<Arc<AppState>>,
     Path(name): Path<String>,
@@ -158,7 +153,7 @@ async fn get_package(
     }
 }
 
-/// GET /api/search?q=query — search by name, description, or keyword
+/// GET /api/search?q=query:search by name, description, or keyword
 async fn search(
     State(state): State<Arc<AppState>>,
     Query(params): Query<SearchQuery>,
@@ -172,7 +167,7 @@ async fn search(
     }
 }
 
-/// GET /api/keywords — list all unique keywords
+/// GET /api/keywords:list all unique keywords
 async fn get_keywords(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<String>>, StatusCode> {
@@ -185,20 +180,7 @@ async fn get_keywords(
     }
 }
 
-/// GET /api/categories — list all package categories
-async fn get_categories(
-    State(state): State<Arc<AppState>>,
-) -> Result<Json<Vec<Category>>, StatusCode> {
-    match package_storage::get_all_categories(&state.db).await {
-        Ok(categories) => Ok(Json(categories)),
-        Err(e) => {
-            eprintln!("Error fetching categories: {}", e);
-            Err(StatusCode::INTERNAL_SERVER_ERROR)
-        }
-    }
-}
-
-/// POST /api/packages/:name/download — increment download counter
+/// POST /api/packages/:name/download:increment download counter
 async fn record_download(
     State(state): State<Arc<AppState>>,
     Path(name): Path<String>,
@@ -212,7 +194,7 @@ async fn record_download(
     }
 }
 
-/// GET /health — health check
+/// GET /health:health check
 async fn health_check(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<serde_json::Value>, StatusCode> {
@@ -229,7 +211,7 @@ async fn health_check(
     }
 }
 
-/// POST /api/auth/github — authenticate with GitHub token, return API key
+/// POST /api/auth/github:authenticate with GitHub token, return API key
 pub async fn github_auth(
     State(state): State<Arc<AppState>>,
     Json(payload): Json<GitHubAuthRequest>,
@@ -259,7 +241,7 @@ pub async fn github_auth(
     }
 }
 
-/// POST /api/packages/publish — publish a package (requires Bearer API key)
+/// POST /api/packages/publish:publish a package (requires Bearer API key)
 pub async fn publish_package(
     State(state): State<Arc<AppState>>,
     headers: HeaderMap,
@@ -395,7 +377,7 @@ fn parse_github_url(url: &str) -> Result<(String, String)> {
     }
 }
 
-/// Insert or update package, then save keywords and category
+/// Insert or update package, then save keywords
 async fn insert_or_update_package(
     pool: &PgPool,
     payload: &PublishRequest,
@@ -441,17 +423,6 @@ async fn insert_or_update_package(
     if let Some(keywords) = &payload.keywords {
         if !keywords.is_empty() {
             package_storage::save_keywords(pool, package_id, keywords).await?;
-        }
-    }
-
-    // Save category if provided
-    if let Some(category_slug) = &payload.category {
-        if !category_slug.is_empty() {
-            if let Err(e) =
-                package_storage::save_package_category(pool, package_id, category_slug).await
-            {
-                eprintln!("Warning: could not save category '{}': {}", category_slug, e);
-            }
         }
     }
 

@@ -140,7 +140,7 @@ export default function DocsPage() {
                 To publish a package, you need an API key tied to your GitHub account. The registry verifies that you own the GitHub repository before publishing.
               </p>
 
-              <h3 className="text-lg font-semibold mt-6" style={{ color: 'var(--text-primary)' }}>Step 1 — Get an API key</h3>
+              <h3 className="text-lg font-semibold mt-6" style={{ color: 'var(--text-primary)' }}>Step 1:Get an API key</h3>
               <p style={{ color: 'var(--text-secondary)' }}>
                 Authenticate with your GitHub account to receive an API key:
               </p>
@@ -155,7 +155,7 @@ export default function DocsPage() {
                 The response will include your <code className="px-1 py-0.5 rounded font-mono text-xs" style={{ backgroundColor: 'var(--bg-card)', color: 'var(--text-primary)' }}>api_key</code>. Keep it safe.
               </p>
 
-              <h3 className="text-lg font-semibold mt-6" style={{ color: 'var(--text-primary)' }}>Step 2 — Publish your package</h3>
+              <h3 className="text-lg font-semibold mt-6" style={{ color: 'var(--text-primary)' }}>Step 2:Publish your package</h3>
               <p style={{ color: 'var(--text-secondary)' }}>
                 Send a POST request with your package details:
               </p>
@@ -170,8 +170,7 @@ export default function DocsPage() {
     "github_repository_url": "https://github.com/your-username/my-package",
     "version": "0.1.0",
     "license": "MIT",
-    "keywords": ["crypto", "hashing"],
-    "category": "cryptography"
+    "keywords": ["crypto", "hashing"]
   }'`}
                 </code>
               </div>
@@ -186,7 +185,6 @@ export default function DocsPage() {
                     ['version', 'optional', 'Semver string e.g. 0.1.0'],
                     ['license', 'optional', 'e.g. MIT, Apache-2.0'],
                     ['keywords', 'optional', 'Array of strings for discoverability'],
-                    ['category', 'optional', 'One of: cryptography, data-structures, math, utilities, zero-knowledge, circuits, standards'],
                   ].map(([field, req, desc]) => (
                     <div key={field} className="flex gap-3">
                       <code className="px-1 py-0.5 rounded font-mono text-xs flex-shrink-0" style={{ backgroundColor: 'var(--bg-darker)', color: 'var(--text-primary)' }}>{field}</code>

@@ -28,9 +28,6 @@ struct Args {
     /// Comma-separated keywords (e.g. --keywords crypto,hash,math)
     #[arg(long, value_delimiter = ',')]
     keywords: Option<Vec<String>>,
-    /// Category slug (e.g. --category cryptography). Run `nargo publish --list-categories` to see options.
-    #[arg(long)]
-    category: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -50,7 +47,6 @@ struct PublishRequest {
     license: Option<String>,
     homepage: Option<String>,
     keywords: Option<Vec<String>>,
-    category: Option<String>,
 }
 
 /// Gets GitHub repository URL from git remote
@@ -143,13 +139,13 @@ async fn main() -> Result<()> {
     };
 
     eprintln!(
-        "📦 Reading package information from {}",
+        "Reading package information from {}",
         manifest_path.display()
     );
 
     // Read package name
     let package_name = nargo_toml::read_package_name(&manifest_path)?;
-    eprintln!("✅ Package name: {}", package_name);
+    eprintln!("Package name: {}", package_name);
 
     // Get GitHub repository URL
     let github_repo_url = if let Some(repo) = args.repo {
@@ -157,11 +153,11 @@ async fn main() -> Result<()> {
     } else {
         match get_git_remote_url() {
             Ok(url) => {
-                eprintln!("✅ Detected repository: {}", url);
+                eprintln!("Detected repository: {}", url);
                 url
             }
             Err(e) => {
-                eprintln!("⚠️  Could not detect git remote: {}", e);
+                eprintln!("Could not detect git remote: {}", e);
                 eprintln!("   Please provide --repo <github-url> or run from a git repository");
                 return Err(e);
             }
@@ -171,7 +167,7 @@ async fn main() -> Result<()> {
     // Get API key (from config, or authenticate with GitHub token)
     let api_key = if let Ok(cfg) = config::Config::load() {
         if let Some(stored_api_key) = cfg.get_api_key() {
-            eprintln!("✅ Using stored credentials");
+            eprintln!("Using stored credentials");
             stored_api_key.to_string()
         } else {
             // No stored credentials, need to authenticate
@@ -184,10 +180,15 @@ async fn main() -> Result<()> {
                     )
                 })?;
 
-            eprintln!("🔐 Authenticating with GitHub...");
-            let key = auth::authenticate_github(&registry_url, &github_token).await?;
-            eprintln!("✅ Authentication successful");
-            key
+            eprintln!("Authenticating with GitHub...");
+            match auth::authenticate_github(&registry_url, &github_token).await? {
+                Some(key) => key,
+                None => anyhow::bail!(
+                    "Your account already exists but no raw token was returned. \
+                     Run 'nargo token create <name>' to get a new token, \
+                     then re-run this command with --api-key or after 'nargo login' with the new token."
+                ),
+            }
         }
     } else {
         // Config file error, fall back to token auth
@@ -201,10 +202,15 @@ async fn main() -> Result<()> {
                 )
             })?;
 
-        eprintln!("🔐 Authenticating with GitHub...");
-        let key = auth::authenticate_github(&registry_url, &github_token).await?;
-        eprintln!("✅ Authentication successful");
-        key
+        eprintln!("Authenticating with GitHub...");
+        match auth::authenticate_github(&registry_url, &github_token).await? {
+            Some(key) => key,
+            None => anyhow::bail!(
+                "Your account already exists but no raw token was returned. \
+                 Run 'nargo token create <name>' to get a new token, \
+                 then re-run this command with --api-key or after 'nargo login' with the new token."
+            ),
+        }
     };
 
     // Build publish request
@@ -216,17 +222,16 @@ async fn main() -> Result<()> {
         license: args.license,
         homepage: args.homepage,
         keywords: args.keywords,
-        category: args.category,
     };
 
-    eprintln!("📤 Publishing package to registry...");
+    eprintln!("Publishing package to registry...");
     eprintln!("   Registry: {}", registry_url);
     eprintln!("   Package: {}", publish_request.name);
     eprintln!("   Repository: {}", publish_request.github_repository_url);
 
     match publish_package(&registry_url, &api_key, &publish_request).await {
         Ok(_) => {
-            eprintln!("✅ Package '{}' published successfully!", package_name);
+            eprintln!("Package '{}' published successfully!", package_name);
             eprintln!(
                 "   View at: {}/packages/{}",
                 registry_url.replace("/api", ""),
@@ -234,7 +239,7 @@ async fn main() -> Result<()> {
             );
         }
         Err(e) => {
-            eprintln!("❌ Failed to publish package: {}", e);
+            eprintln!("Failed to publish package: {}", e);
             return Err(e);
         }
     }

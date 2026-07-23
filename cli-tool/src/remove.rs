@@ -80,7 +80,7 @@ fn get_cache_dir_for_git_url(git_url: &str) -> Option<PathBuf> {
     let url = Url::parse(git_url).ok()?;
     let host = url.host_str()?;
 
-    // Path segments: /<owner>/<repo> — strip leading slash and .git suffix
+    // Path segments: /<owner>/<repo>,strip leading slash and .git suffix
     let path = url.path().trim_start_matches('/').trim_end_matches(".git");
     if path.is_empty() {
         return None;
@@ -93,27 +93,27 @@ fn get_cache_dir_for_git_url(git_url: &str) -> Option<PathBuf> {
 /// Deletes the cached source directory for a dependency.
 fn clean_cached_source(git_url: &str) -> Result<bool> {
     if git_url.is_empty() {
-        eprintln!("   ⚠️  No git URL found — cannot determine cache path");
+        eprintln!("   No git URL found,cannot determine cache path");
         return Ok(false);
     }
 
     let cache_dir = match get_cache_dir_for_git_url(git_url) {
         Some(dir) => dir,
         None => {
-            eprintln!("   ⚠️  Could not parse git URL '{}' — skipping cache cleanup", git_url);
+            eprintln!("   Could not parse git URL '{}',skipping cache cleanup", git_url);
             return Ok(false);
         }
     };
 
     if !cache_dir.exists() {
-        eprintln!("   ℹ️  No cached files found at {}", cache_dir.display());
+        eprintln!("   No cached files found at {}", cache_dir.display());
         return Ok(false);
     }
 
     fs::remove_dir_all(&cache_dir)
         .with_context(|| format!("Failed to delete cache at {}", cache_dir.display()))?;
 
-    eprintln!("   🗑️  Deleted cached source: {}", cache_dir.display());
+    eprintln!("   Deleted cached source: {}", cache_dir.display());
     Ok(true)
 }
 
@@ -139,24 +139,24 @@ fn main() -> Result<()> {
     for package_name in &args.package_names {
         match remove_dependency_from_nargo_toml(&manifest_path, package_name) {
             Ok(Some(git_url)) => {
-                eprintln!("✅ Removed '{}' from {}", package_name, manifest_path.display());
+                eprintln!("Removed '{}' from {}", package_name, manifest_path.display());
                 if args.clean {
                     if let Err(e) = clean_cached_source(&git_url) {
-                        eprintln!("   ⚠️  Failed to clean cache for '{}': {}", package_name, e);
+                        eprintln!("   Failed to clean cache for '{}': {}", package_name, e);
                     }
                 }
                 removed.push(package_name.as_str());
             }
             Ok(None) => {
                 eprintln!(
-                    "⚠️  Dependency '{}' not found in {}",
+                    "Dependency '{}' not found in {}",
                     package_name,
                     manifest_path.display()
                 );
                 not_found.push(package_name.as_str());
             }
             Err(e) => {
-                eprintln!("❌ Failed to remove '{}': {}", package_name, e);
+                eprintln!("Failed to remove '{}': {}", package_name, e);
                 errors.push(package_name.as_str());
             }
         }
@@ -165,7 +165,7 @@ fn main() -> Result<()> {
     // Validate the TOML is still well-formed after all removals
     if !removed.is_empty() {
         if let Err(e) = nargo_toml::validate_nargo_toml(&manifest_path) {
-            eprintln!("⚠️  Warning: Could not validate Nargo.toml after removal: {}", e);
+            eprintln!("Warning: Could not validate Nargo.toml after removal: {}", e);
             eprintln!("   Please check the file manually");
         }
     }

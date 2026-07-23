@@ -33,6 +33,10 @@ path = "src/login.rs"
 name = "nargo-remove"
 path = "src/remove.rs"
 
+[[bin]]
+name = "nargo-token"
+path = "src/token.rs"
+
 [dependencies]
 tokio = { version = "1", features = ["full"] }
 anyhow = "1.0"

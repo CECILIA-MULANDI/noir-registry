@@ -132,7 +132,7 @@ async fn fetch_package_info(registry_url: &str, package_name: &str) -> Result<Pa
                 if attempt < 2 {
                     let delay = std::time::Duration::from_millis(500 * (1 << attempt));
                     eprintln!(
-                        "⚠️  Registry temporarily unavailable, retrying in {:.1}s...",
+                        "Registry temporarily unavailable, retrying in {:.1}s...",
                         delay.as_secs_f64()
                     );
                     tokio::time::sleep(delay).await;
@@ -178,7 +178,7 @@ fn run_nargo_fetch(manifest_path: &Path) -> Result<bool> {
     {
         Ok(out) => out,
         Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            // nargo not installed — not a fatal error, just warn
+            // nargo not installed,not a fatal error, just warn
             return Ok(false);
         }
         Err(e) => return Err(anyhow::anyhow!("Failed to run nargo: {}", e)),
@@ -272,7 +272,7 @@ async fn main() -> Result<()> {
     };
 
     eprintln!(
-        "📦 Fetching package '{}' from registry...",
+        "Fetching package '{}' from registry...",
         args.package_name
     );
     eprintln!("   Registry: {}", registry_url);
@@ -281,8 +281,8 @@ async fn main() -> Result<()> {
     let package_info = match fetch_package_info(&registry_url, &args.package_name).await {
         Ok(info) => info,
         Err(e) => {
-            eprintln!("❌ Error: {}", e);
-            eprintln!("\n💡 Troubleshooting:");
+            eprintln!("Error: {}", e);
+            eprintln!("\nTroubleshooting:");
             eprintln!("   - Check that the registry server is running");
             eprintln!("   - Verify the package name is correct");
             eprintln!(
@@ -293,7 +293,7 @@ async fn main() -> Result<()> {
         }
     };
 
-    eprintln!("✅ Found package: {}", package_info.name);
+    eprintln!("Found package: {}", package_info.name);
     eprintln!("   Repository: {}", package_info.github_repository_url);
 
     // Resolve the version to use: registry value → GitHub tag → none
@@ -313,7 +313,7 @@ async fn main() -> Result<()> {
                 Some(tag)
             }
             None => {
-                eprintln!("   ⚠️  No version tag found — dependency will be added without a tag.");
+                eprintln!("   No version tag found,dependency will be added without a tag.");
                 eprintln!("      Add a `tag` manually in Nargo.toml once the author publishes a release.");
                 None
             }
@@ -329,18 +329,18 @@ async fn main() -> Result<()> {
     ) {
         Ok(_) => {
             eprintln!(
-                "✅ Added '{}' to {}",
+                "Added '{}' to {}",
                 args.package_name,
                 manifest_path.display()
             );
 
             // Validate the TOML was written correctly
             if let Err(e) = nargo_toml::validate_nargo_toml(&manifest_path) {
-                eprintln!("⚠️  Warning: Could not validate Nargo.toml: {}", e);
+                eprintln!("Warning: Could not validate Nargo.toml: {}", e);
                 eprintln!("   Please check the file manually");
             }
 
-            // Record the download — fire-and-forget, non-fatal
+            // Record the download,fire-and-forget, non-fatal
             let download_url = format!(
                 "{}/packages/{}/download",
                 registry_url.trim_end_matches('/'),
@@ -353,28 +353,28 @@ async fn main() -> Result<()> {
             let _ = ping_client.post(&download_url).send().await;
         }
         Err(e) => {
-            eprintln!("❌ Failed to add dependency: {}", e);
+            eprintln!("Failed to add dependency: {}", e);
             return Err(e);
         }
     }
 
     // Fetch and validate the dependency via `nargo check`
-    // Skip if no tag is available — nargo ≥1.0.0-beta.16 requires `tag` for git deps,
+    // Skip if no tag is available,nargo ≥1.0.0-beta.16 requires `tag` for git deps,
     // so `nargo check` would fail anyway without one.
     if !args.no_fetch && resolved_version.is_some() {
-        eprintln!("📥 Fetching dependency with `nargo check`...");
+        eprintln!("Fetching dependency with `nargo check`...");
         match run_nargo_fetch(&manifest_path) {
             Ok(true) => {
-                eprintln!("✅ Dependency fetched and validated successfully!");
+                eprintln!("Dependency fetched and validated successfully!");
             }
             Ok(false) => {
-                eprintln!("⚠️  nargo not found in PATH — skipping fetch.");
+                eprintln!("nargo not found in PATH,skipping fetch.");
                 eprintln!(
                     "   Run `nargo check` manually to pull the dependency, or install nargo first."
                 );
             }
             Err(e) => {
-                eprintln!("⚠️  nargo check failed: {}", e);
+                eprintln!("nargo check failed: {}", e);
                 eprintln!("   The dependency was added to Nargo.toml but could not be fetched.");
                 eprintln!("   This may be caused by other unresolved dependencies in your project.");
                 eprintln!("   Run `nargo check` manually to see the full error, or");

@@ -13,6 +13,7 @@ fn main() {
             "remove" => "nargo-remove",
             "publish" => "nargo-publish",
             "login" => "nargo-login",
+            "token" => "nargo-token",
             _ => {
                 // Not one of our commands, pass through to real nargo
                 let real_nargo = find_real_nargo().unwrap_or_else(|| {
@@ -27,7 +28,7 @@ fn main() {
                 match cmd.status() {
                     Ok(status) => std::process::exit(status.code().unwrap_or(1)),
                     Err(e) => {
-                        eprintln!("❌ Failed to execute nargo: {}", e);
+                        eprintln!("Failed to execute nargo: {}", e);
                         std::process::exit(1);
                     }
                 }
@@ -35,7 +36,7 @@ fn main() {
         };
 
         let binary_path = find_binary(binary_name).unwrap_or_else(|| {
-            eprintln!("❌ Error: Could not find {} binary", binary_name);
+            eprintln!("Error: Could not find {} binary", binary_name);
             eprintln!(
                 "   Please ensure {} is installed and in your PATH",
                 binary_name
@@ -57,7 +58,7 @@ fn main() {
                 std::process::exit(status.code().unwrap_or(1));
             }
             Err(e) => {
-                eprintln!("❌ Failed to execute {}: {}", binary_name, e);
+                eprintln!("Failed to execute {}: {}", binary_name, e);
                 eprintln!("   Path tried: {:?}", binary_path);
                 std::process::exit(1);
             }
@@ -75,7 +76,7 @@ fn main() {
     match cmd.status() {
         Ok(status) => std::process::exit(status.code().unwrap_or(1)),
         Err(e) => {
-            eprintln!("❌ Failed to execute nargo: {}", e);
+            eprintln!("Failed to execute nargo: {}", e);
             std::process::exit(1);
         }
     }

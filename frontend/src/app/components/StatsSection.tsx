@@ -62,16 +62,8 @@ export default function StatsSection({ packageCount }: StatsSectionProps) {
         </div>
 
         <div className="flex justify-center items-center w-full">
-          {/* <div className="flex items-center gap-5">
-              <div className="text-5xl">📦</div>
-              <div>
-                <div className="text-4xl font-bold" style={{ color: 'var(--text-primary)' }}>1,234,567</div>
-                <div className="text-sm mt-1.5 font-medium" style={{ color: 'var(--text-secondary)' }}>Downloads</div>
-              </div>
-            </div> */}
           <div className="h-16 w-px hidden sm:block"></div>
           <div className="flex items-center gap-5 justify-center">
-            <div className="text-5xl">📚</div>
             <div>
               <div
                 className="text-4xl font-bold"

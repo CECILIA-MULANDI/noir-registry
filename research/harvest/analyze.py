@@ -54,7 +54,7 @@ def main() -> None:
     for repo, n in repo_counter.most_common():
         print(f"  {n:4d}  {repo}")
 
-    # intent rows — where someone is actively searching for a library
+    # intent rows,where someone is actively searching for a library
     intent_rows = [r for r in matched if kws(r) & INTENT_PHRASES]
     intent_rows.sort(key=lambda r: len(kws(r)), reverse=True)
     print(f"\n=== INTENT-BEARING ROWS: {len(intent_rows)} ===")
@@ -70,7 +70,7 @@ def main() -> None:
         if body:
             print(f"  body: {body}")
 
-    # keyword frequency INSIDE intent rows only — this is what people actually search for
+    # keyword frequency INSIDE intent rows only,this is what people actually search for
     kw_intent: Counter[str] = Counter()
     for r in intent_rows:
         for kw in kws(r) - INTENT_PHRASES:

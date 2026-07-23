@@ -9,7 +9,6 @@ export default function NotFound() {
       
       <main className="py-16">
         <div className="max-w-[1200px] mx-auto px-8 text-center">
-          <div className="text-6xl mb-4">📦</div>
           <h1 className="text-4xl font-bold mb-4" style={{ color: 'var(--text-primary)' }}>
             Package Not Found
           </h1>

@@ -135,7 +135,7 @@ pub async fn init_db() -> Result<PgPool, Box<dyn std::error::Error>> {
         .eq_ignore_ascii_case("production");
 
     if is_production {
-        // Skip migrations in production — sqlx::migrate!() uses named prepared statements
+        // Skip migrations in production; sqlx::migrate!() uses named prepared statements
         // internally which pollute the PgBouncer connection pool on failure.
         // Run migrations manually: sqlx migrate run --database-url <URL>
         println!("⏭️  Skipping auto-migrations in production (run manually if needed)");

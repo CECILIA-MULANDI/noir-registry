@@ -43,7 +43,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             </div>
           ) : packages.length === 0 ? (
             <div className="text-center py-12">
-              <div className="text-6xl mb-4">🔍</div>
               <p className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
                 No packages found
               </p>

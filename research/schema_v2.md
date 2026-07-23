@@ -2,7 +2,7 @@
 
 ## Why this exists
 
-In May 2026, Savio told me the categorization in v1 "didn't much make sense." I paused, built more Noir projects to understand the space, then went to look at **how devs actually search for libraries.**
+In May 2026, a Noir maintainer told me the categorization in v1 "didn't much make sense." I paused, built more Noir projects to understand the space, then went to look at **how devs actually search for libraries.**
 
 I harvested **1,813 real dev interactions** across:
 
@@ -15,7 +15,7 @@ I harvested **1,813 real dev interactions** across:
 
 **444 matched** on library-discovery / primitive / version-pain vocabulary. Raw CSVs live in `research/harvest/`. This document is what I learned and what I want to change.
 
-## Three findings
+## Two findings
 
 **1. Devs search by primitive name, not by category.** They don't type "Cryptography"; they type "bls12-381", "elgamal", "poseidon", "ecdsa". A category tree fights this. The v1 categories (Cryptography / Data Structures / Math / Utilities / Zero Knowledge / Circuits / Standards) don't map onto how anyone searches.
 
@@ -26,19 +26,18 @@ I harvested **1,813 real dev interactions** across:
 - [Guidance on Aztec NR compile errors, suspected Noir/Nargo version mismatch](https://github.com/AztecProtocol/aztec-packages/issues/16431). A real dev asking for exactly this.
 - [Circuit size blowup from Aztec v3-v4 (root cause potentially in Noir compiler)](https://github.com/noir-lang/noir/issues/12411)
 
-**3. NRG grants are an official demand signal no registry surfaces.** Four rounds, ~$350k allocated. Each round has `[NRG Request]` posts (what the team wants built) + proposal posts (who's building). Nowhere is there a "here's what was asked + here's what got built + here's the current state" view.
-
-## Three lenses, same data
+## Two lenses, same data
 
 1. **"I need a library for X"**: primitive / use-case tag search
-2. **"What did the Noir team ask for + who's building it?"**: NRG round view
-3. **"What compiles on my Nargo version?"**: compat matrix / maintenance view
+2. **"What compiles on my Nargo version?"**: compat matrix / maintenance view
 
-The same underlying entries surface through three different entry points.
+The same underlying entries surface through two different entry points.
 
-## Schema changes (additive, nothing gets deleted)
+## Schema changes
 
-**Kept as-is:** `packages`, `package_versions`, `package_keywords`, `categories`, `package_categories`, `users`.
+**Kept as-is:** `packages`, `package_versions`, `package_keywords`, `users`.
+
+**Removed:** `categories`, `package_categories`. Tags replace them as the sole organizing axis for search and browse.
 
 **New columns on `packages`:**
 
@@ -56,44 +55,42 @@ The same underlying entries surface through three different entry points.
 
 - `primitive:bls12-381`, `primitive:poseidon`, `primitive:ecdsa`
 - `usecase:zkemail`, `usecase:semaphore`, `usecase:verifier-sol`
-- `nrg:round-1`, `nrg:round-4`
-
-**Categories:** demoted from primary organizing axis. Frontend surfaces tags first; the existing 7 categories become secondary metadata visible on entry pages. **No data loss, no rows deleted.**
 
 ## What this unlocks
 
 - **Compat badges on every entry:** compiles on latest / old-only / broken
 - **"What compiles on Nargo X" filter:** solves the version-pain complaint directly
-- **NRG round view:** "Here's what NRG#4 asked for, here's the 12 proposals, here's who shipped, here's current maintenance state"
 - **Alternatives on entry pages:** "If you're using X, also consider Y (Z% fewer opcodes)"
 - **Automated data via extended scraper:** no manual curation needed
 
 ## Migration path
 
-1. **DB migration** (this PR): additive schema deltas, zero downtime, zero data loss.
+1. **DB migration** (this PR): additive schema deltas.
 2. **Extend scraper:** one field to add, mapping `pushed_at` to `last_commit_at`.
 3. **New binary `compat-runner`:** nightly cron. For each package: clone, run `nargo check` against target Nargo versions, write results.
-4. **New API endpoints:** `GET /api/packages/:name/compat`, `GET /api/packages/:name/alternatives`, `GET /api/nrg/:round`.
-5. **NRG backfill script:** read `research/harvest/harvest_github_discussions.csv`, tag NRG#1-#4 entries.
-6. **Frontend surface updates:** demote category dropdown, elevate tag search, add compat badges, add NRG-round view.
+4. **Backfill tags:** run `server/scripts/backfill_primitives.sql` to populate `primitive:*` and `usecase:*` keywords.
+5. **New API endpoints:** `GET /api/packages/:name/compat`, `GET /api/packages/:name/alternatives`.
+6. **Frontend surface updates:** replace the category dropdown with tag search, add compat badges on package cards.
+7. **Category removal:** drop `categories` and `package_categories` tables plus the `/api/categories` endpoint once the frontend no longer references them.
 
-Rough scope: **2 to 3 solo weeks** for schema + backfill + compat runner MVP + surface changes.
+Rough scope: **2 to 3 solo weeks** end to end.
 
-## Open questions for @Savio-Sou
+## Open questions for reviewers
 
-1. **Does this solve the categorization problem you flagged in May?** Or is there a fourth lens I'm missing?
+1. **Does this solve the categorization problem?** Or is there a fourth lens missing?
 2. **Which Nargo versions should the compat matrix target?** Suggested defaults: `1.0.0-beta.6` + `latest stable` + `nightly`. Open to others.
-3. **Is NRG#5 planned?** I'd love to align the schema before it launches so we can surface the round in real time.
-4. **Would you (or Noir Labs / Aztec Labs) fund this direction?** If yes, I'll scope more precisely.
+3. **Would Noir Labs / Aztec Labs fund this direction?** If yes, I will scope more precisely.
 
 ## Prototype status
 
-- [done] Discord / GitHub harvest complete, CSVs in `research/harvest/`
+- [done] GitHub harvest complete, CSVs in `research/harvest/`
 - [done] Schema delta migration written, `server/migrations/20260708120000_add_v2_compat_and_alternatives.sql`
-- [wip] Compat runner MVP
-- [todo] Scraper extension (fetch `pushed_at`)
-- [todo] NRG round backfill from harvest data
-- [todo] API + frontend surface changes
+- [done] Rust models and query sites carry the new fields, `max_compatible_nargo_version` derived on the fly
+- [done] Scraper extension (`pushed_at` populates `last_commit_at`)
+- [done] Compat runner MVP (verified 4 of 5 flagship libraries fail on Nargo `1.0.0-beta.11`)
+- [done] Primitive / usecase tags backfilled for 101 packages
+- [todo] Frontend replaces category dropdown with tag search, renders compat badges
+- [todo] Categories dropped from API, DB, and CLI after frontend is switched over
 
 ---
 

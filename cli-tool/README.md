@@ -22,7 +22,7 @@ cargo install --git https://github.com/CECILIA-MULANDI/noir-registry --bin nargo
 
 ### Configure Registry URL (Optional)
 
-The tool defaults to `https://noir-registry-production-229a.up.railway.app/api`. To use a different registry:
+The tool defaults to `https://noir-registry.fly.dev/api`. To use a different registry:
 
 ```bash
 # Set environment variable (in your ~/.bashrc or ~/.zshrc)
@@ -81,6 +81,41 @@ nargo-add rocq-of-noir
 nargo-remove rocq-of-noir
 ```
 
+## Publishing packages
+
+To publish your own Noir package to the registry, authenticate first.
+
+```bash
+# 1. Log in with a GitHub personal access token (scope: repo)
+# Create one at: https://github.com/settings/tokens
+nargo login --github-token <your-pat>
+
+# 2. From inside your Noir project (with a git remote), publish
+nargo publish
+nargo publish --keywords crypto,hash,poseidon
+nargo publish --description "..." --license MIT
+```
+
+If you already have an account, `nargo login` will tell you so and point you at `nargo token create` for a new raw token (the login endpoint returns a raw token only on initial account creation).
+
+## Managing API tokens
+
+The registry supports multiple named tokens per account.
+
+```bash
+# List all tokens on your account
+nargo token list
+
+# Create a new named token (raw value printed exactly once, save it)
+nargo token create laptop
+
+# Overwrite the active token in ~/.config/noir-registry/config.toml
+nargo token create laptop --save
+
+# Revoke a token by id (from `nargo token list`)
+nargo token revoke 42
+```
+
 ## Example Workflow
 
 ```bash
@@ -105,11 +140,13 @@ cat Nargo.toml
 ## How it works
 
 **`nargo add`:**
+
 - Fetches package information from your registry API
 - Finds `Nargo.toml` in the current directory (or walks up to find it)
 - Adds the dependency with the correct format: `package-name = { git = "url" }`
 
 **`nargo remove`:**
+
 - Finds `Nargo.toml` in the current directory (or walks up to find it)
 - Removes the named dependency from the `[dependencies]` section
 - Supports removing multiple packages in a single command
@@ -126,28 +163,30 @@ cat Nargo.toml
 
 ### Environment Variables
 
-- `NOIR_REGISTRY_URL` - Default registry API URL (defaults to `https://noir-registry-production-229a.up.railway.app/api`)
+- `NOIR_REGISTRY_URL` - Default registry API URL (defaults to `https://noir-registry.fly.dev/api`)
 
 Example:
 
 ```bash
-export NOIR_REGISTRY_URL="https://noir-registry-production-229a.up.railway.app/api"
+export NOIR_REGISTRY_URL="https://noir-registry.fly.dev/api"
 nargo add rocq-of-noir
 ```
 
 ### Command Line Options
 
 **`nargo add`:**
+
 - `--registry <URL>` - Override registry URL for this command
 - `--manifest-path <PATH>` - Specify Nargo.toml path explicitly
 
 **`nargo remove`:**
+
 - `--clean` - Also delete cached source files from `~/nargo`
 - `--manifest-path <PATH>` - Specify Nargo.toml path explicitly
 
 ## Features
 
-✅ **Production-Ready Features:**
+**Production-Ready Features:**
 
 - Environment variable support (`NOIR_REGISTRY_URL`)
 - Network retry logic with exponential backoff

@@ -16,8 +16,12 @@ pub struct GitHubAuthResponse {
     pub github_username: Option<String>,
 }
 
-/// Authenticates with GitHub and returns API key
-pub async fn authenticate_github(registry_url: &str, github_token: &str) -> Result<String> {
+/// Authenticates with GitHub. Returns Some(api_key) on new-user creation,
+/// None if the user already existed (backend only issues a raw token once).
+pub async fn authenticate_github(
+    registry_url: &str,
+    github_token: &str,
+) -> Result<Option<String>> {
     let client = Client::new();
     let auth_url = format!("{}/auth/github", registry_url.trim_end_matches('/'));
 
@@ -44,7 +48,5 @@ pub async fn authenticate_github(registry_url: &str, github_token: &str) -> Resu
         anyhow::bail!("Authentication failed: {}", auth_response.message);
     }
 
-    auth_response
-        .api_key
-        .context("No API key received from authentication")
+    Ok(auth_response.api_key)
 }

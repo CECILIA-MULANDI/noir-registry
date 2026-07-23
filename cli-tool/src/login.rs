@@ -32,18 +32,24 @@ async fn main() -> Result<()> {
             )
         })?;
 
-    eprintln!("🔐 Authenticating with GitHub...");
-    let api_key = auth::authenticate_github(&registry_url, &github_token).await?;
-    eprintln!("✅ Authentication successful");
+    eprintln!("Authenticating with GitHub...");
+    let maybe_key = auth::authenticate_github(&registry_url, &github_token).await?;
 
-    // Save API key to config
-    let mut cfg = config::Config::load()?;
-    cfg.set_api_key(api_key.clone());
-    cfg.set_registry_url(registry_url.clone());
-    cfg.save()?;
+    match maybe_key {
+        Some(api_key) => {
+            let mut cfg = config::Config::load()?;
+            cfg.set_api_key(api_key);
+            cfg.set_registry_url(registry_url);
+            cfg.save()?;
 
-    eprintln!("✅ Credentials saved successfully!");
-    eprintln!("   You can now use 'nargo publish' without authentication");
+            eprintln!("Account created. Credentials saved.");
+            eprintln!("You can now use 'nargo publish' without authentication.");
+        }
+        None => {
+            eprintln!("You already have an account. Your existing tokens are still active.");
+            eprintln!("Run 'nargo token list' to see them, or 'nargo token create <name>' to make a new one.");
+        }
+    }
 
     Ok(())
 }

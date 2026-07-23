@@ -1,4 +1,4 @@
-import { Category, Package } from './types';
+import { Package } from './types';
 
 // Normalize API base URL - remove trailing slashes and semicolons
 function normalizeApiUrl(url: string): string {
@@ -69,22 +69,20 @@ export async function getPackages(): Promise<Package[]> {
         console.error('[API] URL:', url);
         console.error('[API] Error details:', errorText);
         
-        // Helpful error message for 404
         if (res.status === 404) {
-          console.error('[API] ⚠️  404 Not Found - Is the backend server running?');
-          console.error('[API] Try: curl http://localhost:8080/health');
+          console.error('[API] 404 Not Found. Is the backend server running on http://localhost:3001?');
+          console.error('[API] Check: curl http://localhost:3001/api/packages');
         }
-        
+
         return [];
       }
       return res.json();
-  
+
     } catch (error: any) {
-      // Backend might not be running - return empty array gracefully
       console.error('[API] Network error fetching packages:', error);
       console.error('[API] URL attempted:', url);
-      console.error('[API] ⚠️  Is the backend server running at', API_BASE_URL.replace('/api', ''), '?');
-      console.error('[API] Check: curl http://localhost:8080/health');
+      console.error('[API] Is the backend server running on http://localhost:3001?');
+      console.error('[API] Check: curl http://localhost:3001/api/packages');
       return [];
     }
   }
@@ -116,30 +114,8 @@ export async function getPackages(): Promise<Package[]> {
     }
   }
 
-  export async function getPackagesByCategory(categorySlug: string): Promise<Package[]> {
-    const url = `${ensureProperUrl(API_BASE_URL, '/packages')}?category=${encodeURIComponent(categorySlug)}`;
-    try {
-      const res = await fetchWithTimeout(url, { cache: 'no-store' });
-      if (!res.ok) return [];
-      return res.json();
-    } catch {
-      return [];
-    }
-  }
-
   export async function getKeywords(): Promise<string[]> {
     const url = ensureProperUrl(API_BASE_URL, '/keywords');
-    try {
-      const res = await fetchWithTimeout(url, { cache: 'no-store' });
-      if (!res.ok) return [];
-      return res.json();
-    } catch {
-      return [];
-    }
-  }
-
-  export async function getCategories(): Promise<Category[]> {
-    const url = ensureProperUrl(API_BASE_URL, '/categories');
     try {
       const res = await fetchWithTimeout(url, { cache: 'no-store' });
       if (!res.ok) return [];
@@ -154,7 +130,7 @@ export async function getPackages(): Promise<Package[]> {
     try {
       await fetch(url, { method: 'POST', cache: 'no-store' });
     } catch {
-      // Non-fatal — don't block the user
+      // Non-fatal, don't block the user
     }
   }
 

@@ -1,14 +1,5 @@
 use serde::{Deserialize, Serialize};
 
-/// A package category (e.g. Cryptography, Math)
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Category {
-    pub id: i32,
-    pub name: String,
-    pub slug: String,
-    pub description: Option<String>,
-}
-
 /// This should contain the structure of the package we are scraping
 #[derive(Debug, Clone)]
 pub struct Package {

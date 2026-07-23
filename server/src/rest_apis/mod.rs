@@ -8,7 +8,7 @@ use axum::{
     extract::{Path, Query, State},
     http::{HeaderMap, StatusCode},
     response::{Json, Response},
-    routing::{get, post},
+    routing::{delete, get, post},
 };
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
@@ -58,9 +58,26 @@ pub struct GitHubAuthRequest {
 #[derive(Debug, Serialize)]
 pub struct GitHubAuthResponse {
     pub success: bool,
+    /// Raw token for the initial "default" token. Populated ONLY on new-user creation.
+    /// Existing users get null here and should use GET/POST /api/tokens to manage tokens.
     pub api_key: Option<String>,
+    /// First 8 chars of the raw token. Populated alongside api_key on new-user creation.
+    pub api_key_prefix: Option<String>,
     pub message: String,
     pub github_username: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct CreateTokenRequest {
+    pub name: String,
+}
+
+#[derive(Debug, Serialize)]
+pub struct CreateTokenResponse {
+    pub token: auth::ApiToken,
+    /// Raw token string. Shown exactly once here; store it now or lose it.
+    pub raw: String,
+    pub message: String,
 }
 
 /// Creates the API router with all routes
@@ -100,6 +117,8 @@ pub fn create_router(db: PgPool) -> Router {
         .route("/api/packages/publish", post(publish_package))
         .route("/api/packages/:name/download", post(record_download))
         .route("/api/auth/github", post(github_auth))
+        .route("/api/tokens", get(list_tokens).post(create_token))
+        .route("/api/tokens/:id", delete(revoke_token))
         .route("/api/keywords", get(get_keywords))
         .layer(cors)
         .with_state(state)
@@ -217,27 +236,115 @@ pub async fn github_auth(
     Json(payload): Json<GitHubAuthRequest>,
 ) -> Result<Json<GitHubAuthResponse>, StatusCode> {
     match auth::get_or_create_user_from_github(&state.db, &payload.github_token).await {
-        Ok(user) => {
-            if let Some(api_key) = &user.api_key {
-                Ok(Json(GitHubAuthResponse {
-                    success: true,
-                    api_key: Some(api_key.clone()),
-                    message: "Authentication successful".to_string(),
-                    github_username: Some(user.github_username.clone()),
-                }))
+        Ok((user, new_raw_key)) => {
+            let (message, api_key_prefix) = if let Some(ref key) = new_raw_key {
+                (
+                    "Account created. Save your api_key now, it will not be shown again.".to_string(),
+                    Some(key.chars().take(8).collect::<String>()),
+                )
             } else {
-                Err(StatusCode::INTERNAL_SERVER_ERROR)
-            }
+                (
+                    "Authenticated. Manage tokens via GET /api/tokens and POST /api/tokens.".to_string(),
+                    None,
+                )
+            };
+            Ok(Json(GitHubAuthResponse {
+                success: true,
+                api_key: new_raw_key,
+                api_key_prefix,
+                message,
+                github_username: Some(user.github_username.clone()),
+            }))
         }
         Err(e) => {
             eprintln!("Error authenticating with Github: {}", e);
             Ok(Json(GitHubAuthResponse {
                 success: false,
                 api_key: None,
+                api_key_prefix: None,
                 message: format!("Failed to authenticate with GitHub: {}", e),
                 github_username: None,
             }))
         }
+    }
+}
+
+/// Extract the Bearer token from Authorization header and resolve it to a user.
+/// Returns 401 if the header is missing/malformed or the token is invalid/revoked.
+async fn require_auth(pool: &PgPool, headers: &HeaderMap) -> Result<auth::User, StatusCode> {
+    let raw_token = headers
+        .get("Authorization")
+        .and_then(|h| h.to_str().ok())
+        .and_then(|s| s.strip_prefix("Bearer "))
+        .ok_or(StatusCode::UNAUTHORIZED)?;
+
+    auth::validate_api_key(pool, raw_token)
+        .await
+        .map_err(|e| {
+            eprintln!("Error validating api_key: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?
+        .ok_or(StatusCode::UNAUTHORIZED)
+}
+
+/// GET /api/tokens: list every token belonging to the authenticated user, newest first.
+pub async fn list_tokens(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+) -> Result<Json<Vec<auth::ApiToken>>, StatusCode> {
+    let user = require_auth(&state.db, &headers).await?;
+    auth::list_tokens_for_user(&state.db, user.id)
+        .await
+        .map(Json)
+        .map_err(|e| {
+            eprintln!("Error listing tokens: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })
+}
+
+/// POST /api/tokens: create a new named token for the authenticated user.
+/// The raw token is returned exactly once.
+pub async fn create_token(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+    Json(payload): Json<CreateTokenRequest>,
+) -> Result<Json<CreateTokenResponse>, StatusCode> {
+    let user = require_auth(&state.db, &headers).await?;
+    let name = payload.name.trim();
+    if name.is_empty() {
+        return Err(StatusCode::BAD_REQUEST);
+    }
+    let (token, raw) = auth::create_token_for_user(&state.db, user.id, name)
+        .await
+        .map_err(|e| {
+            eprintln!("Error creating token: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    Ok(Json(CreateTokenResponse {
+        token,
+        raw,
+        message: "Save this token now; it will not be shown again.".to_string(),
+    }))
+}
+
+/// DELETE /api/tokens/:id: revoke one of the authenticated user's tokens.
+/// Idempotent: revoking twice returns 404 the second time.
+pub async fn revoke_token(
+    State(state): State<Arc<AppState>>,
+    headers: HeaderMap,
+    Path(token_id): Path<i32>,
+) -> Result<StatusCode, StatusCode> {
+    let user = require_auth(&state.db, &headers).await?;
+    let revoked = auth::revoke_token(&state.db, user.id, token_id)
+        .await
+        .map_err(|e| {
+            eprintln!("Error revoking token: {}", e);
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
+    if revoked {
+        Ok(StatusCode::NO_CONTENT)
+    } else {
+        Err(StatusCode::NOT_FOUND)
     }
 }
 
